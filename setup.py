@@ -19,14 +19,30 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
+from pathlib import Path
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from setuptools import setup
 
+NAME = "Bible Analyzer"
+VERSION = "0.1b1"
+AUTHOR = "Kristoffer Paulsson"
+EMAIL = "kristoffer.paulsson@talenten.se"
+DESCRIPTION = """Bible text analyzer of the greek new and old testament."""
+LONG_DESCRIPTION = Path("README.md").read_text()
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+setup(
+    name=NAME,
+    version=VERSION,
+    license="ISC",
+    description=DESCRIPTION,
+    author=AUTHOR,
+    author_email=EMAIL,
+    long_description=LONG_DESCRIPTION,
+    long_description_content_type="text/markdown",
+    classifiers=[
+        "Intended Audience :: Religion",
+        "License :: OSI Approved :: ISC License (ISCL)"
+    ],
+    package_dir={"": "src"},
+    python_requires=">=3.8, <4"
+)
