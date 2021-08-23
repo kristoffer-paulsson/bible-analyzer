@@ -1,0 +1,34 @@
+
+KJV John 3:16 For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life.
+
+NA28 John 3:16 οὕτως γὰρ ἠγάπησεν ὁ θεὸς τὸν κόσμον, ὥστε τὸν υἱὸν τὸν μονογενῆ ἔδωκεν, ἵνα πᾶς ὁ πιστεύων εἰς αὐτὸν μὴ ἀπόληται ἀλλ᾽ ἔχῃ ζωὴν αἰώνιον.
+
+SFB15 John 3:16 Så älskade Gud världen att han utgav sin enfödde Son, för att var och en som tror på honom inte ska gå förlorad utan ha evigt liv.
+
+______________________________
+
+1. οὕτως οὕτως - b (adverb)
+2. γάρ γάρ - cc (conjunction coordinating)
+3. ἠγάπησεν ἀγαπάω - viaa3s (verb indicative aorist active 3rd person singular)
+4. ὁ ὁ - dnms (definite article nominative masculine singular)
+5. θεός θεός - nnmsc (noun nominative masculine singular common)
+6. τόν ὁ - dams (definite article accusative masculine singular)
+7. κόσμον κόσμος - namsc (noun accusative masculine singular common)
+8. ὥστε ὥστε - cs (conjunction subordinating)
+9. τόν ὁ - dams (definite article accusative masculine singular)
+10. υἱόν υἱός - namsc (noun accusative masculine singular common)
+11. τόν ὁ - dams (definite article accusative masculine singular)
+12. μονογενῆ μονογενής - anamsn (adjective normal accusative masculine singular no degree)
+13. ἔδωκεν δίδωμι - viaa3s (verb indicative aorist active 3rd person singular)
+14. ἵνα ἵνα - cs (conjunction subordinating)
+15. πᾶς πᾶς - ainmsn (adjective indefinite nominative masculine singular no degree)
+16. ὁ ὁ - dnms (definite article nominative masculine singular)
+17. πιστεύων πιστεύω - vppanms (verb participle present active nominative masculine singular)
+18. εἰς εἰς - pa (preposition accusative)
+19. αὐτόν αὐτός - rpams (pronoun personal accusative masculine singular)
+20. μή μή - x (particle)
+21. ἀπόληται ἀπόλλυμι - vsam3s (verb subjunctive aorist middle 3rd person singular)
+22. ἀλλ᾽ ἀλλά - cc (conjunction coordinating)
+23. ἔχῃ ἔχω - vspa3s (verb subjunctive present active 3rd person singular)
+24. ζωήν ζωή - nafsc (noun accusative feminine singular common)
+25. αἰώνιον αἰώνιος - anafsn (adjective normal accusative feminine singular no degree)

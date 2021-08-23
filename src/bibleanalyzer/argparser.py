@@ -19,14 +19,28 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
+from argparse import ArgumentParser, Namespace, Action
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
+from bibleanalyzer.data import DESCRIPTION
 
 
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
+class CLI:
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    def __init__(self):
+        self._parser = ArgumentParser(description=DESCRIPTION)
+        parsers = self._parser.add_subparsers(
+            title="Commands",
+            description="Operations on the corpus and compiled statistics.",
+            dest="command",
+            help="First the 'load' command must be invoked to compile the corpus.",
+        )
+        self._load(parsers)
+
+    @classmethod
+    def parse_args(cls) -> Namespace:
+        return cls()._parser.parse_args()
+
+    def _load(self, subparser):
+        load = subparser.add_parser(name="load")
+        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which corpuses to load.")
+        # load.set_defaults()

@@ -19,12 +19,17 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-from pathlib import Path
+"""Setup for the Bible Analyzer project."""
+import sys
+from pathlib import Path, PurePath
 
 from setuptools import setup
 
-NAME = "Bible Analyzer"
-VERSION = "0.1b1"
+here = PurePath(__file__)
+sys.path.append(here.parents[0].joinpath("src"))
+
+from bibleanalyzer.data import NAME, VERSION
+
 AUTHOR = "Kristoffer Paulsson"
 EMAIL = "kristoffer.paulsson@talenten.se"
 DESCRIPTION = """Bible text analyzer of the greek new and old testament."""
@@ -39,10 +44,12 @@ setup(
     author_email=EMAIL,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
+    entry_points={"console_scripts": ["bible-analyzer = bibleanalyzer.main:main"]},
     classifiers=[
         "Intended Audience :: Religion",
         "License :: OSI Approved :: ISC License (ISCL)"
     ],
     package_dir={"": "src"},
+    packages=["bibleanalyzer"],
     python_requires=">=3.8, <4"
 )

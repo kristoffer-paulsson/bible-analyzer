@@ -138,5 +138,7 @@ dmypy.json
 cython_debug/
 
 # Project specific
-/corpus/*
-!/corpus/.gitkeep
+/corpus/nt/*
+!/corpus/nt/.gitkeep
+/corpus/ot/*
+!/corpus/ot/.gitkeep
