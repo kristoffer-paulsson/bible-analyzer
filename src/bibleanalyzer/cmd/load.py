@@ -21,6 +21,8 @@
 #
 """Module containing the LOAD command class."""
 import json
+from pathlib import Path
+from pickle import Pickler
 
 from . import Command
 from ..data import BOOKS
@@ -39,8 +41,8 @@ class LoadCommand(Command):
         else:
             raise RuntimeError("Unsupported corpus: {}".format(self._args.corpus))
 
-    def iterate(self, corpus):
-        self.logger.info("Starting with corpus: {}".format(corpus.upper()))
+    def iterate(self, corpus: str):
+        self.logger.info("Starting with corpora: {}".format(corpus.upper()))
         path = self._config.get("corpus").joinpath(corpus)
         for book in json.loads(BOOKS)[corpus]:
             filename = path.joinpath("{}.txt".format(book))
@@ -49,7 +51,9 @@ class LoadCommand(Command):
             self.parse(filename, corpus, book)
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
-    def parse(self, filename, corpus, book):
+    def parse(self, filename: Path, corpus: str, book: str):
         loader = TextLoader(self.logger)
-        data = loader.parse(filename)
-        print(data)
+        loader.parse(filename)
+
+        with self._config.get("cache").joinpath("parsing-{}.pickle".format(book)).open("wb") as cache:
+            Pickler(cache).dump(loader.data)

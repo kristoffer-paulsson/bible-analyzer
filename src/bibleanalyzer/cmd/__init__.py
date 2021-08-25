@@ -22,7 +22,9 @@
 """The CMD (command) package stores all executable commands of the BibleAnalyzer.
 The init also contains the Command baseclass."""
 import importlib
+import logging
 from argparse import Namespace
+from collections import ChainMap
 
 from ..config import Config
 from ..data import NAME, VERSION
@@ -30,6 +32,9 @@ from ..logging import Logger
 
 
 class Command:
+    SUCCESS = 0
+    FAIL = 0
+
     logger = None
 
     def __init__(self, config: Config, args: Namespace):
@@ -37,12 +42,16 @@ class Command:
         self.logger.info("using parameters: {}.".format(args))
 
         self._args = args
+        self._runtime(config)
         self._validate(config)
         self._config = config
 
     @classmethod
-    def execute(cls, args):
+    def execute(cls, args: Namespace) -> int:
+        status = cls.SUCCESS
         config = Config()
+        if args.debug:
+            config.update({"level": logging.DEBUG})
         cls.logger = Logger.create(config, args.command)
 
         try:
@@ -54,15 +63,28 @@ class Command:
             cmd = klass(config, args)
             cmd()
         except Exception as e:
+            status = cls.FAIL
             cls.logger.critical("There was a bug in {} {}.".format(NAME, VERSION), exc_info=e)
+            print("\033[0;31mSomething went wrong.\033[0;0m See the logs for additional information.")
+        else:
+            msg = "Done running command [{}].".format(args.command)
+            cls.logger.info(msg)
+            print(f"{msg} Errors: {cmd.logger.errors}, warnings: {cmd.logger.warnings}.")
 
-    def _validate(self, config):
+        return status
+
+    def _validate(self, config: ChainMap):
         if not config.get("corpus").is_dir():
             raise RuntimeError("Corpus directory not found, {}".format(config.get("corpus")))
-        self.logger.info("Corpus directory: {}".format(config.get("corpus")))
         if not config.get("cache").is_dir():
             raise RuntimeError("Cache directory not found, {}".format(config.get("logs")))
+
+    def _runtime(self, config: ChainMap):
+        self.logger.info("-"*10 + " Runtime information " + "-"*10)
+        self.logger.info("Log level: {}".format(logging.getLevelName(self.logger.getEffectiveLevel())))
+        self.logger.info("Corpus directory: {}".format(config.get("corpus")))
         self.logger.info("Cache directory: {}".format(config.get("cache")))
+        self.logger.info("-" * 10 + " Runtime information " + "-" * 10)
 
     def __call__(self):
         raise NotImplementedError()

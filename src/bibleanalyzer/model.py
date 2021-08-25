@@ -20,23 +20,23 @@
 #     Kristoffer Paulsson - initial implementation
 #
 """Model for the BibleAnalyzer corpus."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
 @dataclass
 class GreekWord:
-    word: str
-    lexeme: str
-    grammar: str
+    word: str = None
+    lexeme: str = None
+    grammar: str = None
 
 
 @dataclass
 class DataEntry:
-    index: int
-    book: str
-    chapter: int
-    verse: int
-    text: str
-    translation: str
-    words: List[GreekWord]
+    index: int = 0
+    book: str = 0
+    chapter: int = 0
+    verse: int = 0
+    text: str = None
+    translation: str = None
+    words: List[GreekWord] = field(default_factory=list)

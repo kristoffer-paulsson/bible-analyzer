@@ -19,10 +19,28 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-"""Program entry point for command line interface."""
-from .argparser import CLI
-from .cmd import Command
+"""Module containing the CLEAN command class."""
+from pathlib import Path
+
+from . import Command
 
 
-def main() -> int:
-    return Command.execute(CLI.parse_args())
+class CleanCommand(Command):
+    def __call__(self):
+        if self._args.logs:
+            self.clean(self._config["logs"], [".log"])
+
+        if self._args.cache:
+            self.clean(self._config["cache"], [".pickle", ".csv", ".json"])
+
+    def clean(self, folder: Path, suffixes: list):
+        count = 0
+
+        for filename in folder.iterdir():
+            if filename.suffix in suffixes:
+                filename.unlink(True)
+                count += 1
+
+        msg = "Deleted {} files from folder {}".format(count, folder)
+        self.logger.info(msg)
+        print(msg)

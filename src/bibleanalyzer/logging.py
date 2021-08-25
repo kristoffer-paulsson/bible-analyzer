@@ -28,6 +28,9 @@ class Logger(logging.Logger):
     _config = None
 
     def __init__(self, name):
+        self._warn_cnt = 0
+        self._err_cnt = 0
+
         self.manager.setLoggerClass(self.__class__)
         logging.Logger.__init__(self, name, self._config.get("level"))
         handler = logging.FileHandler(
@@ -38,10 +41,26 @@ class Logger(logging.Logger):
         handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
         self.addHandler(handler)
 
+    @property
+    def warnings(self) -> int:
+        return self._warn_cnt
+
+    @property
+    def errors(self) -> int:
+        return self._err_cnt
+
+    def warning(self, msg, *args, **kwargs):
+        self._warn_cnt += 1
+        self.log(logging.WARNING, msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self._err_cnt += 1
+        self.log(logging.ERROR, msg, *args, **kwargs)
+
     @classmethod
     def create(cls, config, command):
         if not config.get("logs").is_dir():
             raise RuntimeError("Log directory not found, {}".format(config.get("logs")))
-        cls._config = config
 
+        cls._config = config
         return cls(command)

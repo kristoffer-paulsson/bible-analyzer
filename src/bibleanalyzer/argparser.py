@@ -19,7 +19,7 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-from argparse import ArgumentParser, Namespace, Action
+from argparse import ArgumentParser, Namespace
 
 from bibleanalyzer.data import DESCRIPTION
 
@@ -28,6 +28,8 @@ class CLI:
 
     def __init__(self):
         self._parser = ArgumentParser(description=DESCRIPTION)
+        self._parser.add_argument("-d", "--debug", action="store_true", default=False,
+                                  help="Print debug messages in the log file.")
         parsers = self._parser.add_subparsers(
             title="Commands",
             description="Operations on the corpus and compiled statistics.",
@@ -35,6 +37,7 @@ class CLI:
             help="First the 'load' command must be invoked to compile the corpus.",
         )
         self._load(parsers)
+        self._clean(parsers)
 
     @classmethod
     def parse_args(cls) -> Namespace:
@@ -42,5 +45,9 @@ class CLI:
 
     def _load(self, subparser):
         load = subparser.add_parser(name="load")
-        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which corpuses to load.")
-        # load.set_defaults()
+        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which corpora to load.")
+
+    def _clean(self, subparser):
+        load = subparser.add_parser(name="clean")
+        load.add_argument("-c", "--cache", action="store_true", default=False, help="Clean the cache folder.")
+        load.add_argument("-l", "--logs", action="store_true", default=False, help="Clean the logs folder.")
