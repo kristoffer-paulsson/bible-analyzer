@@ -37,6 +37,7 @@ class CLI:
             help="First the 'load' command must be invoked to compile the corpus.",
         )
         self._load(parsers)
+        self._line(parsers)
         self._clean(parsers)
 
     @classmethod
@@ -44,10 +45,14 @@ class CLI:
         return cls()._parser.parse_args()
 
     def _load(self, subparser):
-        load = subparser.add_parser(name="load")
+        load = subparser.add_parser(name="load", help="Imports the corpora and caches them as \"parsings.\"")
         load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which corpora to load.")
 
+    def _line(self, subparser):
+        load = subparser.add_parser(name="line", help="Lines up the corpora \"parsings\" into \"linear\" for analysis.")
+        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to process.")
+
     def _clean(self, subparser):
-        load = subparser.add_parser(name="clean")
+        load = subparser.add_parser(name="clean", help="Cleanses the cache or the logs directories.")
         load.add_argument("-c", "--cache", action="store_true", default=False, help="Clean the cache folder.")
         load.add_argument("-l", "--logs", action="store_true", default=False, help="Clean the logs folder.")

@@ -19,22 +19,32 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
+"""Parsing liner. Lines up the corpora parsings in a linear fashion and caches them for analysis."""
+from pathlib import Path
 
-from bibleanalyzer.logging import Logger
+from . import Processor
+from .logging import Logger
 
 
-class Processor:
-    """Processor is a baseclass used for processing data in the BibleAnalyzer."""
+class Liner(Processor):
 
     def __init__(self, logger: Logger):
-        self._data = None
-        self.logger = logger
+        super().__init__(logger)
 
-    @property
-    def data(self) -> object:
-        return self._data
+        self._cur_file = None
 
+    def process(self, filename: Path):
+        self.logger.info("Load parsing: {}".format(filename.name))
 
-__all__ = [
-    "Processor"
-]
+        self._cur_file = str(filename)
+
+        for line in self.iterate(filename):
+            if not line:
+                continue
+
+            self.switch(line)
+            try:
+                self._processor[self._machine.state](line)
+            except ProcessException as e:
+                self.logger.error(self.format(e, self._cur_file, self._line_cnt))
+

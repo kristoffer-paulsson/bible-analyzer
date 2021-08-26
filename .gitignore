@@ -144,3 +144,5 @@ cython_debug/
 !/corpus/nt/.gitkeep
 /corpus/ot/*
 !/corpus/ot/.gitkeep
+/corpus/meta/*
+!/corpus/meta/.gitkeep

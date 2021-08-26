@@ -19,23 +19,17 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-"""Module containing the LOAD command class."""
+"""Module containing the LINE command class."""
 import json
 from pathlib import Path
 from pickle import Pickler
 
 from . import Command
 from ..data import BOOKS
-from ..loader import TextLoader
+from ..liner import Liner
 
 
-class LoadCommand(Command):
-
-    CORPUS = {
-        "ot": "LXT",
-        "nt": "NA28",
-    }
-
+class LineCommand(Command):
     def __call__(self):
         if self._args.corpus == "all":
             self.iterate("ot")
@@ -44,19 +38,18 @@ class LoadCommand(Command):
             self.iterate(self._args.corpus)
 
     def iterate(self, corpus: str):
-        translation = self.CORPUS[corpus]
-        self.logger.info("Starting with corpora: {}".format(corpus.upper()))
-        path = self._config.get("corpus").joinpath(corpus)
+        self.logger.info("Starting with parsing: {}".format(corpus.upper()))
+        path = self._config.get("cache").joinpath(corpus)
         for book in json.loads(BOOKS)[corpus]:
-            filename = path.joinpath("{}.txt".format(book))
+            filename = path.joinpath("parsing-{}.pickle".format(book))
             if not filename.is_file():
-                self.logger.error("The corpus for {} is missing at: {}".format(book.capitalize(), filename))
-            self.parse(filename, corpus, book, translation)
+                self.logger.error("The parsing for {} is missing at: {}".format(book.capitalize(), filename))
+            self.lineup(filename, corpus, book)
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
-    def parse(self, filename: Path, corpus: str, book: str, translation: str):
-        loader = TextLoader(self.logger, translation)
-        loader.process(filename)
+    def lineup(self, filename: Path, corpus: str, book: str):
+        liner = Liner(self.logger)
+        liner.process(filename)
 
-        with self._config.get("cache").joinpath("parsing-{}.pickle".format(book)).open("wb") as cache:
-            Pickler(cache).dump(loader.data)
+        with self._config.get("cache").joinpath("linear-{}.pickle".format(book)).open("wb") as cache:
+            Pickler(cache).dump(liner.data)

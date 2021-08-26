@@ -24,13 +24,14 @@ saved as RTF and converted to TXT by TextEdit for macOS."""
 import re
 from pathlib import Path
 
-from bibleanalyzer.logging import Logger
-from bibleanalyzer.model import DataEntry, GreekWord
+from . import Processor
+from .logging import Logger
+from .model import DataEntry, GreekWord
 
 VERSE_REGEX = r"""(?P<translation>\S+) (?P<book>\S+) (?P<chapter>\d+)\:(?P<verse>\d+) (?P<text>\S.*)"""
 HLINE_REGEX = r"""^\.*\n(_+)\n.*$"""
 GREEK_REGEX = r"""^(?:\d+)\. (?:\S+) (?:\S+) - (?:\S+) (?:\S+).*$"""
-WHOLE_REGEX = r"""^(?:(?P<translation>\S+) (?P<book>(?:[1-3] )?\S+) (?P<chapter>\d+)\:(?P<verse>\d+)(?: (?P<text>\S.*))?)|(?P<line>_+)|(?:(?P<index>\d+)\. (?P<word>\S+) (?P<lexeme>\S+) - (?P<grammar>\S+) (?P<inflexion>[\S ]+))$"""
+WHOLE_REGEX = r"""^(?:(?P<translation>\S+) (?P<book>(?:[1-3] )?[\S ]+) (?P<chapter>\d+)\:(?P<verse>\d+)(?: (?P<text>\S.*))?)|(?P<line>_+)|(?:(?P<index>\d+)\. (?P<word>\S+) (?P<lexeme>\S+) - (?P<grammar>\S+) (?P<inflexion>[\S ]+))$"""
 
 TOKEN_REGEX = r"""([·.,;:]|[^[·\.,;: \(\)\[\]]\s]+)"""
 
@@ -73,9 +74,9 @@ class StateMachine:
         self._state = self.START
 
 
-class TextLoader:
+class TextLoader(Processor):
 
-    def __init__(self, logger: Logger):
+    def __init__(self, logger: Logger, translation: str = None):
         self.logger = logger
 
         self._processor = (
@@ -86,6 +87,8 @@ class TextLoader:
             self.process_word,
             self.process_end
         )
+
+        self._translation = translation
 
         self._machine = StateMachine()
         self._skip = False
@@ -107,7 +110,7 @@ class TextLoader:
     def data(self) -> list:
         return self._data
 
-    def parse(self, filename: Path):
+    def process(self, filename: Path):
         self.logger.info("Load corpus: {}".format(filename.name))
 
         self._cur_file = str(filename)
@@ -158,7 +161,6 @@ class TextLoader:
     def process_word(self, line: dict):
         if not line["index"]:
             self.logger.error(self.format("Expected a greek word", self._cur_file, self._line_cnt))
-            # raise ProcessException("Expected a greek word")
 
         index = int(line["index"])
 
@@ -166,7 +168,6 @@ class TextLoader:
             self.logger.error(
                 self.format("Greek word not in order ({}, {})".format(
                     self._word_cnt, index), self._cur_file, self._line_cnt))
-            # raise ProcessException("Greek word not in order ({}, {})".format(self._word_cnt, index))
 
         self._entry.words.append(GreekWord(
             word=line["word"],
@@ -179,13 +180,11 @@ class TextLoader:
     def process_line(self, line: dict):
         if not line["line"]:
             self.logger.error(self.format("Expected a line", self._cur_file, self._line_cnt))
-            # raise ProcessException("Expected a line")
 
     def process_text(self, line: dict):
         if not line["translation"]:
             self.logger.error(self.format("Expected a translation", self._cur_file, self._line_cnt))
-            # raise ProcessException("Expected a translation")
-        elif line["translation"] != "NA28":
+        elif line["translation"] != self._translation:
             return
 
         book = line["book"]
@@ -212,12 +211,10 @@ class TextLoader:
                 self.logger.error(
                     self.format("Chapter is out of order ({}, {})".format(
                         self._chapter_cnt, chapter), self._cur_file, self._line_cnt))
-                # raise ProcessException("Chapter is out of order ({}, {})".format(self._chapter_cnt, chapter))
             if verse != self._verse_cnt:
                 self.logger.error(self.format(
                     "Verse is out of order ({}, {})".format(
                         self._verse_cnt, verse), self._cur_file, self._line_cnt))
-                # raise ProcessException("Verse is out of order ({}, {})".format(self._verse_cnt, verse))
 
         self._entry = DataEntry(
             index=self._total_cnt,
