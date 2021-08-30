@@ -38,6 +38,7 @@ class CLI:
         )
         self._load(parsers)
         self._line(parsers)
+        self._csv(parsers)
         self._clean(parsers)
 
     @classmethod
@@ -51,6 +52,10 @@ class CLI:
     def _line(self, subparser):
         load = subparser.add_parser(name="line", help="Lines up the corpora \"parsings\" into \"linear\" for analysis.")
         load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to process.")
+
+    def _csv(self, subparser):
+        load = subparser.add_parser(name="csv", help="Exports the loaded corpora to comma separated value files.")
+        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to export.")
 
     def _clean(self, subparser):
         load = subparser.add_parser(name="clean", help="Cleanses the cache or the logs directories.")

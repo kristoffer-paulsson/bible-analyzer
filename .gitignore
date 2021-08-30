@@ -139,6 +139,7 @@ cython_debug/
 
 # Project specific
 *.pickle
+*.csv
 
 /corpus/nt/*
 !/corpus/nt/.gitkeep

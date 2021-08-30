@@ -127,6 +127,7 @@ class TextLoader(Processor):
                     self.logger.error(self.format(e, self._cur_file, self._line_cnt))
 
             self._machine.goto(StateMachine.END)
+            self._processor[self._machine.state]()
         except StateError as e:
             self.logger.error(self.format(
                 "{} The parser suffered from a state machine error, skipping".format(e),
@@ -142,7 +143,6 @@ class TextLoader(Processor):
             self._entry = None
             self._machine.reset()
             self._machine.goto(StateMachine.TEXT)
-            self._entry = False
 
         elif line["translation"] and self._machine.state is not StateMachine.TEXT:
             if self._machine.state == StateMachine.WORD:
@@ -227,8 +227,9 @@ class TextLoader(Processor):
         self._total_cnt += 1
         self._verse_cnt += 1
 
-    def process_end(self, line: dict):
-        pass
+    def process_end(self):
+        self._data.append(self._entry)
+        self._entry = None
 
     def iterate(self, filename: Path):
         with filename.open("r") as doc:
