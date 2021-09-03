@@ -38,3 +38,7 @@ class Processor:
 __all__ = [
     "Processor"
 ]
+
+
+class ProcessException(RuntimeWarning):
+    """Process exception is thrown when a process won't handle its match."""

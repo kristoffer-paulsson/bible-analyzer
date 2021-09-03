@@ -66,7 +66,11 @@ BOOKS = """
     "zephaniah",
     "haggai",
     "zechariah",
-    "malachi"
+    "malachi",
+    "sirach",
+    "letter_of_jeremiah",
+    "tobit",
+    "judith"
   ],
   "nt": [
     "matthew",

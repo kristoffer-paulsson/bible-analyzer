@@ -40,3 +40,30 @@ class DataEntry:
     text: str = None
     translation: str = None
     words: List[GreekWord] = field(default_factory=list)
+
+
+@dataclass
+class WordToken:
+    word: str = None
+    lexeme: str = None
+    grammar: str = None
+
+
+@dataclass
+class PunctuationToken:
+    diacritic: str = None
+
+
+@dataclass
+class ChapterToken:
+    number: int = 0
+
+
+@dataclass
+class VerseToken:
+    number: int = 0
+
+
+@dataclass
+class SectionToken:
+    level: int = 1

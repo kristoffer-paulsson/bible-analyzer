@@ -47,11 +47,13 @@ class LoadCommand(Command):
         translation = self.CORPUS[corpus]
         self.logger.info("Starting with corpora: {}".format(corpus.upper()))
         path = self._config.get("corpus").joinpath(corpus)
+
         for book in json.loads(BOOKS)[corpus]:
             filename = path.joinpath("{}.txt".format(book))
             if not filename.is_file():
                 self.logger.error("The corpus for {} is missing at: {}".format(book.capitalize(), filename))
             self.parse(filename, corpus, book, translation)
+
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
     def parse(self, filename: Path, corpus: str, book: str, translation: str):

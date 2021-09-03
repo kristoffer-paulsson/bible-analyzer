@@ -22,7 +22,7 @@
 """Module containing the LINE command class."""
 import json
 from pathlib import Path
-from pickle import Pickler
+from pickle import Pickler, Unpickler
 
 from . import Command
 from ..data import BOOKS
@@ -38,18 +38,35 @@ class LineCommand(Command):
             self.iterate(self._args.corpus)
 
     def iterate(self, corpus: str):
+        letters = set()
+        stats = dict()
+
         self.logger.info("Starting with parsing: {}".format(corpus.upper()))
-        path = self._config.get("cache").joinpath(corpus)
+        path = self._config.get("cache")
+
         for book in json.loads(BOOKS)[corpus]:
             filename = path.joinpath("parsing-{}.pickle".format(book))
             if not filename.is_file():
                 self.logger.error("The parsing for {} is missing at: {}".format(book.capitalize(), filename))
-            self.lineup(filename, corpus, book)
+            liner = self.lineup(filename, corpus, book)
+
+            letters |= liner.letters
+            for key, value in liner.stats.items():
+                if key in stats.keys():
+                    stats[key] += value
+                else:
+                    stats[key] = value
+
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
+        print(letters, stats)
 
     def lineup(self, filename: Path, corpus: str, book: str):
         liner = Liner(self.logger)
-        liner.process(filename)
+        with filename.open("rb") as cache:
+            data = Unpickler(cache).load()
 
-        with self._config.get("cache").joinpath("linear-{}.pickle".format(book)).open("wb") as cache:
-            Pickler(cache).dump(liner.data)
+            liner.process(data, book)
+
+        return liner
+        # with self._config.get("cache").joinpath("linear-{}.pickle".format(book)).open("wb") as cache:
+        #    Pickler(cache).dump(liner.data)

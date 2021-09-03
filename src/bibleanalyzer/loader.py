@@ -24,7 +24,7 @@ saved as RTF and converted to TXT by TextEdit for macOS."""
 import re
 from pathlib import Path
 
-from . import Processor
+from . import Processor, ProcessException
 from .logging import Logger
 from .model import DataEntry, GreekWord
 
@@ -38,10 +38,6 @@ TOKEN_REGEX = r"""([·.,;:]|[^[·\.,;: \(\)\[\]]\s]+)"""
 
 class StateError(RuntimeWarning):
     """State machine throws this exception at wrongful attempt to change the state."""
-
-
-class ProcessException(RuntimeWarning):
-    """Process exception is thrown when a process won't handle its match."""
 
 
 class StateMachine:
@@ -124,12 +120,12 @@ class TextLoader(Processor):
                 try:
                     self._processor[self._machine.state](line)
                 except ProcessException as e:
-                    self.logger.error(self.format(e, self._cur_file, self._line_cnt))
+                    self.logger.error(Logger.file_format(e, self._cur_file, self._line_cnt))
 
             self._machine.goto(StateMachine.END)
             self._processor[self._machine.state]()
         except StateError as e:
-            self.logger.error(self.format(
+            self.logger.error(Logger.file_format(
                 "{} The parser suffered from a state machine error, skipping".format(e),
                 self._cur_file, self._line_cnt
             ))
@@ -160,13 +156,13 @@ class TextLoader(Processor):
 
     def process_word(self, line: dict):
         if not line["index"]:
-            self.logger.error(self.format("Expected a greek word", self._cur_file, self._line_cnt))
+            self.logger.error(Logger.file_format("Expected a greek word", self._cur_file, self._line_cnt))
 
         index = int(line["index"])
 
         if index != self._word_cnt:
             self.logger.error(
-                self.format("Greek word not in order ({}, {})".format(
+                Logger.file_format("Greek word not in order ({}, {})".format(
                     self._word_cnt, index), self._cur_file, self._line_cnt))
 
         self._entry.words.append(GreekWord(
@@ -179,11 +175,11 @@ class TextLoader(Processor):
 
     def process_line(self, line: dict):
         if not line["line"]:
-            self.logger.error(self.format("Expected a line", self._cur_file, self._line_cnt))
+            self.logger.error(Logger.file_format("Expected a line", self._cur_file, self._line_cnt))
 
     def process_text(self, line: dict):
         if not line["translation"]:
-            self.logger.error(self.format("Expected a translation", self._cur_file, self._line_cnt))
+            self.logger.error(Logger.file_format("Expected a translation", self._cur_file, self._line_cnt))
         elif line["translation"] != self._translation:
             return
 
@@ -194,7 +190,7 @@ class TextLoader(Processor):
         if not line["text"]:
             self._skip = True
             self.logger.warning(
-                self.format("{book} {chapter}:{verse} ({translation}) is missing in".format(
+                Logger.file_format("{book} {chapter}:{verse} ({translation}) is missing in".format(
                     book=book, chapter=chapter, verse=verse, translation=line["translation"]),
                     self._cur_file, self._line_cnt, "corpus"
                 )
@@ -209,10 +205,10 @@ class TextLoader(Processor):
         else:
             if chapter != self._chapter_cnt:
                 self.logger.error(
-                    self.format("Chapter is out of order ({}, {})".format(
+                    Logger.file_format("Chapter is out of order ({}, {})".format(
                         self._chapter_cnt, chapter), self._cur_file, self._line_cnt))
             if verse != self._verse_cnt:
-                self.logger.error(self.format(
+                self.logger.error(Logger.file_format(
                     "Verse is out of order ({}, {})".format(
                         self._verse_cnt, verse), self._cur_file, self._line_cnt))
 
@@ -238,6 +234,3 @@ class TextLoader(Processor):
                 match = re.match(WHOLE_REGEX, line)
                 if match:
                     yield match.groupdict()
-
-    def format(self, msg: str, path: Path, line: int, token: str = "here") -> str:
-        return "{}:\n  File \"{}\", line {}, in {}.".format(msg, path, line, token)

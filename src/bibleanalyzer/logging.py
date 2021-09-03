@@ -22,6 +22,7 @@
 """Configuring a logger for BibleAnalyzer for search and debugging errors."""
 import datetime
 import logging
+from pathlib import Path
 
 
 class Logger(logging.Logger):
@@ -56,6 +57,10 @@ class Logger(logging.Logger):
     def error(self, msg, *args, **kwargs):
         self._err_cnt += 1
         self.log(logging.ERROR, msg, *args, **kwargs)
+
+    @classmethod
+    def file_format(cls, msg: str, path: Path, line: int, token: str = "here") -> str:
+        return "{}:\n  File \"{}\", line {}, in {}.".format(msg, path, line, token)
 
     @classmethod
     def create(cls, config, command):
