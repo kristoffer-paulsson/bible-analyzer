@@ -45,4 +45,10 @@ class TestKoine(TestCase):
         Koine.normalize("".join(test))
 
     def test_expand(self):
-        self.fail()
+        for value in EXPAND.values():
+            self.assertEqual(value[1], "ι")
+            self.assertNotEqual(value[0], "ι")
+
+    def test_contains_upper(self):
+        self.assertTrue(Koine.contains_upper('Ἡ'))
+        self.assertFalse(Koine.contains_upper("ι"))

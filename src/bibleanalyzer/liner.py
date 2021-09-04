@@ -22,7 +22,7 @@
 """Parsing liner. Lines up the corpora parsings in a linear fashion and caches them for analysis."""
 import re
 
-from bibleanalyzer.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry
+from bibleanalyzer.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry, SectionToken
 from bibleanalyzer.transform import Koine
 
 from . import Processor, ProcessException
@@ -45,10 +45,11 @@ class Liner(Processor):
         self._linear = list()
         self._letters = set()
         self._stats = dict()
+        self._verify = ""
 
     @property
     def linear(self) -> list:
-        return self._letters
+        return self._linear
 
     @property
     def letters(self) -> set:
@@ -57,6 +58,10 @@ class Liner(Processor):
     @property
     def stats(self) -> dict:
         return self._stats
+
+    @property
+    def verify(self) -> str:
+        return self._verify.strip()
 
     def _stat(self, letters: str):
         for char in set(Koine.expand(letters)):
@@ -83,22 +88,54 @@ class Liner(Processor):
             if item.verse == (self._verse + 1):
                 self._verse += 1
                 yield VerseToken(number=item.verse)
+                if not item.text:
+                    continue
 
             for token in self.tokenizer_iter(item):
                 yield token
 
     def token_iter(self):
+        stack = list()
         for token in self.chapter_iter():
-            yield token
+
+            if isinstance(token, PunctuationToken):
+                if token.diacritic in (".", ";"):
+                    stack.append(token)
+                    continue
+
+            if stack and isinstance(token, (ChapterToken, VerseToken)):
+                stack.append(token)
+                continue
+
+            if stack and isinstance(token, WordToken):
+                yield stack[0]
+
+                if Koine.contains_upper(token.word):
+                    yield SectionToken()
+
+                for item in stack[1:]:
+                    yield item
+
+                stack = list()
+                yield token
+                continue
+
+            if stack:
+                stack.append(token)
+            else:
+                yield token
+
+        for item in stack:
+            yield item
 
     def tokenizer_iter(self, item: DataEntry):
         word_count = 0
-        for token in re.findall(TOKEN_REGEX, item.text.replace("[", "").replace("]", "")):
-            token = token.strip()
+        for match in re.findall(TOKEN_REGEX, item.text.replace("[", "").replace("]", "")):
+            token = match.strip()
             if token:
                 if token in PUNCTUATION:
                     yield PunctuationToken(diacritic=token)
-                else:
+                elif Koine.koine_only(token):
                     word = item.words[word_count]
 
                     if Koine.normalize(word.word).lower() != Koine.normalize(token).lower():
@@ -108,10 +145,23 @@ class Liner(Processor):
                     self._letters |= set(token)
                     self._stat(token)
                     yield WordToken(word=token, lexeme=word.lexeme, grammar=word.grammar)
+                else:
+                    self.logger.warning("Token excluded: '{}'".format(token))
+            elif match != " ":
+                self.logger.debug("Match left untokenized: '{}'".format(match))
 
     def process(self, data: list, book: str):
         self._data = data
         self._book = book
 
         for token in self.token_iter():
+            self._verify_token(token)
             self._linear.append(token)
+
+    def _verify_token(self, token):
+        if isinstance(token, WordToken):
+            self._verify += " " + token.word
+        elif isinstance(token, PunctuationToken):
+            self._verify += token.diacritic
+        elif isinstance(token, VerseToken):
+            self._verify += "\n"

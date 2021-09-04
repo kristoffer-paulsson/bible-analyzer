@@ -48,16 +48,18 @@ class CLI:
     def _load(self, subparser):
         load = subparser.add_parser(name="load", help="Imports the corpora and caches them as \"parsings.\"")
         load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which corpora to load.")
+        load.add_argument("-v", "--verify", action="store_true", default=False, help="Verify output against source.")
 
     def _line(self, subparser):
-        load = subparser.add_parser(name="line", help="Lines up the corpora \"parsings\" into \"linear\" for analysis.")
-        load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to process.")
+        line = subparser.add_parser(name="line", help="Lines up the corpora \"parsings\" into \"linear\" for analysis.")
+        line.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to process.")
+        line.add_argument("-v", "--verify", action="store_true", default=False, help="Verify output against source.")
 
     def _csv(self, subparser):
         load = subparser.add_parser(name="csv", help="Exports the loaded corpora to comma separated value files.")
         load.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to export.")
 
     def _clean(self, subparser):
-        load = subparser.add_parser(name="clean", help="Cleanses the cache or the logs directories.")
-        load.add_argument("-c", "--cache", action="store_true", default=False, help="Clean the cache folder.")
-        load.add_argument("-l", "--logs", action="store_true", default=False, help="Clean the logs folder.")
+        clean = subparser.add_parser(name="clean", help="Cleanses the cache or the logs directories.")
+        clean.add_argument("-c", "--cache", action="store_true", default=False, help="Clean the cache folder.")
+        clean.add_argument("-l", "--logs", action="store_true", default=False, help="Clean the logs folder.")

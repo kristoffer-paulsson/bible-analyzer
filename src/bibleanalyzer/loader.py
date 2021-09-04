@@ -101,10 +101,15 @@ class TextLoader(Processor):
 
         self._data = list()
         self._entry = None
+        self._verify = ""
 
     @property
     def data(self) -> list:
         return self._data
+
+    @property
+    def verify(self) -> str:
+        return self._verify.strip()
 
     def process(self, filename: Path):
         self.logger.info("Load corpus: {}".format(filename.name))
@@ -135,14 +140,14 @@ class TextLoader(Processor):
 
         # In case a verse has been left out we reset the state machine and start over.
         if line["translation"] and self._machine.state is StateMachine.LINE:
-            self._data.append(self._entry)
+            self._add_data()
             self._entry = None
             self._machine.reset()
             self._machine.goto(StateMachine.TEXT)
 
         elif line["translation"] and self._machine.state is not StateMachine.TEXT:
             if self._machine.state == StateMachine.WORD:
-                self._data.append(self._entry)
+                self._add_data()
                 self._entry = None
             self._machine.goto(StateMachine.TEXT)
         elif line["line"] and self._machine.state is not StateMachine.LINE:
@@ -224,7 +229,7 @@ class TextLoader(Processor):
         self._verse_cnt += 1
 
     def process_end(self):
-        self._data.append(self._entry)
+        self._add_data()
         self._entry = None
 
     def iterate(self, filename: Path):
@@ -234,3 +239,9 @@ class TextLoader(Processor):
                 match = re.match(WHOLE_REGEX, line)
                 if match:
                     yield match.groupdict()
+
+    def _add_data(self):
+        if self._entry.text:
+            self._verify += self._entry.text.strip() + "\n"
+        self._data.append(self._entry)
+

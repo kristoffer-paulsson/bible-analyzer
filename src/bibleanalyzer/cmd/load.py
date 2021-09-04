@@ -22,7 +22,7 @@
 """Module containing the LOAD command class."""
 import json
 from pathlib import Path
-from pickle import Pickler
+from pickle import Pickler, Unpickler
 
 from . import Command
 from ..data import BOOKS
@@ -60,5 +60,29 @@ class LoadCommand(Command):
         loader = TextLoader(self.logger, translation)
         loader.process(filename)
 
-        with self._config.get("cache").joinpath("parsing-{}.pickle".format(book)).open("wb") as cache:
+        cache_path = self._config.get("cache").joinpath("parsing-{}.pickle".format(book))
+        with cache_path.open("wb") as cache:
             Pickler(cache).dump(loader.data)
+
+        reconstruction = Reconstructor(book)
+        with cache_path.open("rb") as cache:
+            reconstruction.process(Unpickler(cache).load())
+
+        if loader.verify != reconstruction.verify:
+            self.logger.error("Failed verification of {} in {}".format(book.title(), corpus.upper()))
+
+
+class Reconstructor:
+
+    def __init__(self, book: str):
+        self._book = book
+        self._verify = ""
+
+    @property
+    def verify(self) -> str:
+        return self._verify.strip()
+
+    def process(self, data: list):
+        for item in data:
+            if item.text:
+                self._verify += item.text.strip() + "\n"
