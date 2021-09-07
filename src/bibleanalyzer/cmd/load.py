@@ -30,7 +30,6 @@ from ..loader import TextLoader
 
 
 class LoadCommand(Command):
-
     CORPUS = {
         "ot": "LXT",
         "nt": "NA28",

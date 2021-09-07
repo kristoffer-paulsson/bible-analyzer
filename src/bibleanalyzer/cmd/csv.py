@@ -61,7 +61,12 @@ class CsvCommand(Command):
             writer = csv.DictWriter(csv_file, fieldnames=("chapter", "verse", "corpus"))
             writer.writeheader()
             for entry in data:
-                writer.writerow({"chapter": entry.chapter, "verse": entry.verse, "corpus": str(entry.text if entry.text else "").strip().lower().replace("·", "").replace(".", "").replace(",", "").replace(":", "").replace(";", "").replace("(", "").replace(")", "")})
+                writer.writerow({"chapter": entry.chapter, "verse": entry.verse,
+                                 "corpus": str(entry.text if entry.text else "").strip().lower().replace("·",
+                                                                                                         "").replace(
+                                     ".", "").replace(",", "").replace(":", "").replace(";", "").replace("(",
+                                                                                                         "").replace(
+                                     ")", "")})
 
         hash = hashlib.sha256()
         content = csv_path.read_bytes()
@@ -96,4 +101,3 @@ class CsvCommand(Command):
                 text = re.sub(r"[··\.,:;;*‡—\(\)\[\]]", "", text)
                 text = text.strip().lower()
                 writer.writerow({"book": book, "chapter": entry.chapter, "verse": entry.verse, "corpus": text})
-

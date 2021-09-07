@@ -24,13 +24,12 @@ import re
 
 from bibleanalyzer.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry, SectionToken
 from bibleanalyzer.transform import Koine
-
 from . import Processor, ProcessException
 from .logging import Logger
 
-
 TOKEN_REGEX = r"""([᾽\w]+|[\W])"""
 PUNCTUATION = ("·", ".", ",", ";", ":", "-")
+
 
 class Liner(Processor):
 

@@ -244,4 +244,3 @@ class TextLoader(Processor):
         if self._entry.text:
             self._verify += self._entry.text.strip() + "\n"
         self._data.append(self._entry)
-

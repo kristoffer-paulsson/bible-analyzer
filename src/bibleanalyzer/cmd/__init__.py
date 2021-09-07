@@ -80,7 +80,7 @@ class Command:
             raise RuntimeError("Cache directory not found, {}".format(config.get("logs")))
 
     def _runtime(self, config: ChainMap):
-        self.logger.info("-"*10 + " Runtime information " + "-"*10)
+        self.logger.info("-" * 10 + " Runtime information " + "-" * 10)
         self.logger.info("Log level: {}".format(logging.getLevelName(self.logger.getEffectiveLevel())))
         self.logger.info("Corpus directory: {}".format(config.get("corpus")))
         self.logger.info("Cache directory: {}".format(config.get("cache")))

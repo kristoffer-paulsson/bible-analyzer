@@ -33,6 +33,10 @@ class Structor:
 
         self._structure()
 
+    @property
+    def line(self) -> list:
+        return self._linear
+
     def _structure(self):
         chapter = None
         verse = None

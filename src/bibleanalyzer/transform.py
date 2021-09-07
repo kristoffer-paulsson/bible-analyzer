@@ -107,7 +107,6 @@ NORMALIZE = {
     '`': "`", 'ῶ': "ω", 'Ὸ': "Ο", 'Ό': "Ο", 'Ὼ': "Ω", 'Ώ': "Ω", '´': "´", '῾': "῾", 'ι': "ι"
 }
 
-
 EXPAND = {
     'ᾀ': "ἀι", 'ᾁ': "ἁι", 'ᾂ': "ἂι", 'ᾃ': "ἃι", 'ᾄ': "ἄι", 'ᾅ': "ἅι", 'ᾆ': "ἆι", 'ᾇ': "ἇι", 'ᾈ': "Ἀι", 'ᾉ': "Ἁι",
     'ᾊ': "Ἂι", 'ᾋ': "Ἃι", 'ᾌ': "Ἄι", 'ᾍ': "Ἅι", 'ᾎ': "Ἆι", 'ᾏ': "Ἇι", 'ᾐ': "ἠι", 'ᾑ': "ἡι", 'ᾒ': "ἢι", 'ᾓ': "ἣι",
@@ -124,7 +123,6 @@ LETTERS = set(NORMALIZE.keys()) | set(EXPAND.keys())
 CHAR = (
     "ALPHA", "BETA", "GAMMA", "DELTA", "EPSILON", "ZETA", "ETA", "THETA", "IOTA", "KAPPA", "LAMBDA", "MU", "NU", "XI",
     "OMICRON", "PI", "RHO", "SIGMA", "TAU", "UPSILON", "PHI", "CHI", "PSI", "OMEGA")
-
 
 GREEK_LATIN = {
     'α': "a",

@@ -38,6 +38,7 @@ class CLI:
         )
         self._load(parsers)
         self._line(parsers)
+        self._analyze(parsers)
         self._csv(parsers)
         self._clean(parsers)
 
@@ -53,6 +54,11 @@ class CLI:
     def _line(self, subparser):
         line = subparser.add_parser(name="line", help="Lines up the corpora \"parsings\" into \"linear\" for analysis.")
         line.add_argument("corpus", choices=["all", "nt", "ot"], help="Which parsings to process.")
+        line.add_argument("-v", "--verify", action="store_true", default=False, help="Verify output against source.")
+
+    def _analyze(self, subparser):
+        line = subparser.add_parser(name="analyze", help="Analyzes the linear corpora.")
+        line.add_argument("corpus", choices=["all", "nt", "ot"], help="Which linear to process.")
         line.add_argument("-v", "--verify", action="store_true", default=False, help="Verify output against source.")
 
     def _csv(self, subparser):

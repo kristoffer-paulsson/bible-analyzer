@@ -19,18 +19,19 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-"""Module containing the LINE command class."""
+"""Module containing the ANALYZE command class."""
 import json
 from pathlib import Path
-from pickle import Pickler, Unpickler
+from pickle import Unpickler
 
 from . import Command
 from ..data import BOOKS
-from ..liner import Liner
+from ..grammar import Grammar
 from ..model import WordToken, PunctuationToken, VerseToken
+from ..structor import Structor
 
 
-class LineCommand(Command):
+class AnalyzeCommand(Command):
     def __call__(self):
         if self._args.corpus == "all":
             self.iterate("ot")
@@ -46,46 +47,18 @@ class LineCommand(Command):
         path = self._config.get("cache")
 
         for book in json.loads(BOOKS)[corpus]:
-            filename = path.joinpath("parsing-{}.pickle".format(book))
+            filename = path.joinpath("linear-{}.pickle".format(book))
             if not filename.is_file():
-                self.logger.error("The parsing for {} is missing at: {}".format(book.capitalize(), filename))
-            liner = self.lineup(filename, corpus, book)
-
-            letters |= liner.letters
-            for key, value in liner.stats.items():
-                if key in stats.keys():
-                    stats[key] += value
-                else:
-                    stats[key] = value
+                self.logger.error("The linear for {} is missing at: {}".format(book.capitalize(), filename))
+            self.analyze(filename, corpus, book)
 
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
-    def lineup(self, filename: Path, corpus: str, book: str) -> Liner:
-        liner = Liner(self.logger)
+    def analyze(self, filename: Path, corpus: str, book: str):
         with filename.open("rb") as cache:
-            data = Unpickler(cache).load()
-
-            liner.process(data, book)
-
-        cache_path = self._config.get("cache").joinpath("linear-{}.pickle".format(book))
-        with cache_path.open("wb") as cache:
-            cache.truncate()
-            Pickler(cache).dump(liner.linear)
-
-        reconstruction = Reconstructor(book)
-        with cache_path.open("rb") as cache:
-            reconstruction.process(Unpickler(cache).load())
-
-        if liner.verify != reconstruction.verify:
-            self.logger.error("Failed verification of {} in {}".format(book.title(), corpus.upper()))
-            with self._config.get("cache").joinpath("verify-{}_1.txt".format(book)).open("w") as cache:
-                cache.truncate()
-                cache.write(liner.verify)
-            with self._config.get("cache").joinpath("verify-{}_2.txt".format(book)).open("w") as cache:
-                cache.truncate()
-                cache.write(reconstruction.verify)
-
-        return liner
+            for token in Structor(Unpickler(cache).load()).line:
+                if isinstance(token, WordToken):
+                    Grammar.classify(token)
 
 
 class Reconstructor:
