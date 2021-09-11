@@ -25,6 +25,7 @@ import re
 from bibleanalyzer.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry, SectionToken
 from bibleanalyzer.transform import Koine
 from . import Processor, ProcessException
+from .grammar import Grammar, Speech, TypeNoun
 from .logging import Logger
 
 TOKEN_REGEX = r"""([᾽\w]+|[\W])"""
@@ -77,8 +78,12 @@ class Liner(Processor):
                 continue
             yield item
 
-    def chapter_iter(self):
+    def chapter_iter(self, verse_first: bool):
+        if not verse_first:
+            yield SectionToken()
+
         for item in self.verse_dispenser():
+
             if item.chapter == (self._chapter + 1):
                 self._chapter += 1
                 self._verse = 0
@@ -87,15 +92,20 @@ class Liner(Processor):
             if item.verse == (self._verse + 1):
                 self._verse += 1
                 yield VerseToken(number=item.verse)
+
+                if item.chapter == 1 and item.verse == 1 and verse_first:
+                    yield SectionToken()
+
                 if not item.text:
                     continue
 
             for token in self.tokenizer_iter(item):
                 yield token
 
-    def token_iter(self):
+    def token_iter(self, verse_first: bool = True):
         stack = list()
-        for token in self.chapter_iter():
+        idx = 0 if verse_first else 1
+        for token in self.chapter_iter(verse_first):
 
             if isinstance(token, PunctuationToken):
                 if token.diacritic in (".", ";"):
@@ -107,13 +117,21 @@ class Liner(Processor):
                 continue
 
             if stack and isinstance(token, WordToken):
-                yield stack[0]
+                if not verse_first:
+                    yield stack[0]
 
-                if Koine.contains_upper(token.word):
-                    yield SectionToken()
+                    if Koine.contains_upper(token.word):
+                        yield SectionToken()
 
-                for item in stack[1:]:
+                for item in stack[idx:]:
                     yield item
+
+                if Koine.contains_upper(token.word) and verse_first:
+                    word = Grammar.classify(token)
+                    if word.speech == Speech.NOUN and word.type == TypeNoun.PROPER:
+                        yield SectionToken(level=-1)
+                    else:
+                        yield SectionToken(level=1)
 
                 stack = list()
                 yield token
@@ -153,7 +171,7 @@ class Liner(Processor):
         self._data = data
         self._book = book
 
-        for token in self.token_iter():
+        for token in self.token_iter(False):
             self._verify_token(token)
             self._linear.append(token)
 

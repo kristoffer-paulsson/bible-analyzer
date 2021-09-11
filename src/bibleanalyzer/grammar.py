@@ -45,6 +45,9 @@ class Word:
     def word(self) -> WordToken:
         return self._word
 
+    def __repr__(self) -> str:
+        return "<{} {}@{}>".format(self.__class__.__name__, self._word.lexeme.title(), self._word.grammar)
+
 
 class Morphology:
     """Base class for parsing morphology of said software."""
@@ -66,8 +69,8 @@ class InflexionBWG(Inflexion):
     pass
 
 
-class Class(InflexionBWG):
-    """Word class."""
+class Speech(InflexionBWG):
+    """Part of speech."""
 
     NOUN = "n"
     PRONOUN = "r"
@@ -234,7 +237,7 @@ class WordBWG(Word):
 
     def __init__(
             self, word: WordToken,
-            word_class: Class,
+            speech: Speech,
             case: Case = None,
             gender: Gender = None,
             number: Number = None,
@@ -246,7 +249,7 @@ class WordBWG(Word):
             degree: Degree = None,
     ):
         Word.__init__(self, word)
-        self._class = word_class
+        self._speech = speech
         self._case = case
         self._gender = gender
         self._number = number
@@ -258,8 +261,8 @@ class WordBWG(Word):
         self._type = i_type
 
     @property
-    def word_class(self) -> Class:
-        return self._class
+    def speech(self) -> Speech:
+        return self._speech
 
     @property
     def case(self) -> Case:
@@ -300,12 +303,12 @@ class WordBWG(Word):
 
 class Combined(WordBWG):
 
-    def __init__(self, word: WordToken, every: List[WordToken]):
-        WordBWG.__init__(self, word, Class.UNIDENTIFIED)
+    def __init__(self, word: WordToken, every: List[Word]):
+        WordBWG.__init__(self, word, Speech.UNIDENTIFIED)
         self._every = every
 
 
-class Compound(WordBWG):
+class Compound(Combined):
     """Represents compound words with separate grammars."""
 
     @property
@@ -313,26 +316,26 @@ class Compound(WordBWG):
         return self._every
 
 
-class Split(WordBWG):
+class Split(Combined):
     """Represents words with alternative grammars."""
 
     @property
     def alternatives(self) -> List[Word]:
-        return self._all
+        return self._every
 
 
-class Several(WordBWG):
+class Several(Combined):
     """Represents words with several grammars."""
 
     @property
     def multiple(self) -> List[Word]:
-        return self._all
+        return self._every
 
 
 class Noun(WordBWG):
 
     def __init__(self, word: WordToken, case: CaseGeneric, gender: Gender, number: Number, i_type: TypeNoun):
-        WordBWG.__init__(self, word, Class.NOUN, case=case, gender=gender, number=number, i_type=i_type)
+        WordBWG.__init__(self, word, Speech.NOUN, case=case, gender=gender, number=number, i_type=i_type)
 
 
 class Verb(WordBWG):
@@ -342,7 +345,7 @@ class Verb(WordBWG):
             mood: Mood, tense: Tense, voice: Voice, person: Person
     ):
         WordBWG.__init__(
-            self, word, Class.VERB, case=case, gender=gender,
+            self, word, Speech.VERB, case=case, gender=gender,
             number=number, mood=mood, tense=tense, voice=voice, person=person
         )
 
@@ -354,7 +357,7 @@ class Adjective(WordBWG):
             number: Number, i_type: TypeAdjective, degree: Degree
     ):
         WordBWG.__init__(
-            self, word, Class.ADJECTIVE, case=case, gender=gender,
+            self, word, Speech.ADJECTIVE, case=case, gender=gender,
             number=number, i_type=i_type, degree=degree
         )
 
@@ -362,49 +365,49 @@ class Adjective(WordBWG):
 class DefiniteArticle(WordBWG):
 
     def __init__(self, word: WordToken, case: CaseGeneric, gender: Gender, number: Number):
-        WordBWG.__init__(self, word, Class.DEFINITE_ARTICLE, case=case, gender=gender, number=number)
+        WordBWG.__init__(self, word, Speech.DEFINITE_ARTICLE, case=case, gender=gender, number=number)
 
 
 class Preposition(WordBWG):
 
     def __init__(self, word: WordToken, case: CasePreposition):
-        WordBWG.__init__(self, word, Class.PREPOSITION, case=case)
+        WordBWG.__init__(self, word, Speech.PREPOSITION, case=case)
 
 
 class Conjunction(WordBWG):
 
     def __init__(self, word: WordToken, i_type: TypeConjunction):
-        WordBWG.__init__(self, word, Class.CONJUNCTION, i_type=i_type)
+        WordBWG.__init__(self, word, Speech.CONJUNCTION, i_type=i_type)
 
 
 class Particle(WordBWG):
 
     def __init__(self, word: WordToken):
-        WordBWG.__init__(self, word, Class.PARTICLE)
+        WordBWG.__init__(self, word, Speech.PARTICLE)
 
 
 class Interjection(WordBWG):
 
     def __init__(self, word: WordToken):
-        WordBWG.__init__(self, word, Class.INTERJECTION)
+        WordBWG.__init__(self, word, Speech.INTERJECTION)
 
 
 class Adverb(WordBWG):
 
     def __init__(self, word: WordToken):
-        WordBWG.__init__(self, word, Class.ADVERB)
+        WordBWG.__init__(self, word, Speech.ADVERB)
 
 
 class Pronoun(WordBWG):
 
     def __init__(self, word: WordToken, case: CaseGeneric, gender: Gender, number: Number, i_type: TypePronoun):
-        WordBWG.__init__(self, word, Class.PRONOUN, case=case, gender=gender, number=number, i_type=i_type)
+        WordBWG.__init__(self, word, Speech.PRONOUN, case=case, gender=gender, number=number, i_type=i_type)
 
 
 class Indeclinable(WordBWG):
 
     def __init__(self, word: WordToken):
-        WordBWG.__init__(self, word, Class.INDECLINABLE_NOUN)
+        WordBWG.__init__(self, word, Speech.INDECLINABLE_NOUN)
 
 
 class MorphologyBWG(Morphology):
@@ -413,7 +416,7 @@ class MorphologyBWG(Morphology):
     @classmethod
     def parse(cls, token: WordToken) -> Word:
         morphology = list(token.grammar)
-        word_class = morphology.pop(0)
+        speech = morphology.pop(0)
 
         if "/" in morphology:
             morphology = list()
@@ -421,7 +424,7 @@ class MorphologyBWG(Morphology):
             alts = list()
 
             for alt in grammars:
-                alts.append(WordToken(word=token.word, lexeme=token.lexeme, grammar=alt))
+                alts.append(cls.parse(WordToken(word=token.word, lexeme=token.lexeme, grammar=alt)))
 
             word = Split(token, alts)
         elif "&" in morphology:
@@ -429,42 +432,42 @@ class MorphologyBWG(Morphology):
             grammars = token.grammar.split("&")
 
             if "+" in token.lexeme:
+                every = list()
                 lexemes = token.lexeme.split("+")
-                if len(lexemes) > 2:
-                    RuntimeError("Compound more than two: {}".format(token))
-                word = Compound(
-                    token,
-                    cls.parse(WordToken(word=lexemes[0], lexeme=lexemes[0], grammar=grammars[0])),
-                    cls.parse(WordToken(word=lexemes[1], lexeme=lexemes[1], grammar=grammars[1]))
-                )
+
+                for index in range(max(len(lexemes), len(grammars))):
+                    every.append(cls.parse(
+                        WordToken(word=lexemes[index], lexeme=lexemes[index], grammar=grammars[index])))
+
+                word = Compound(token, every=every)
             else:
                 several = list()
 
                 for multi in grammars:
-                    several.append(WordToken(word=token.word, lexeme=token.lexeme, grammar=multi))
+                    several.append(cls.parse(WordToken(word=token.word, lexeme=token.lexeme, grammar=multi)))
 
                 word = Several(token, several)
-        elif word_class == Class.NOUN:
+        elif speech == Speech.NOUN:
             case = CaseGeneric.is_enumerated(morphology.pop(0))
             gender = Gender.is_enumerated(morphology.pop(0))
             number = Number.is_enumerated(morphology.pop(0))
             i_type = TypeNoun.is_enumerated(morphology.pop(0))
 
             word = Noun(word=token, case=case, gender=gender, number=number, i_type=i_type)
-        elif word_class == Class.PRONOUN:
+        elif speech == Speech.PRONOUN:
             i_type = TypePronoun.is_enumerated(morphology.pop(0))
             case = CaseGeneric.is_enumerated(morphology.pop(0))
             gender = Gender.is_enumerated(morphology.pop(0))
             number = Number.is_enumerated(morphology.pop(0))
 
             word = Pronoun(word=token, case=case, gender=gender, number=number, i_type=i_type)
-        elif word_class == Class.DEFINITE_ARTICLE:
+        elif speech == Speech.DEFINITE_ARTICLE:
             case = CaseGeneric.is_enumerated(morphology.pop(0))
             gender = Gender.is_enumerated(morphology.pop(0))
             number = Number.is_enumerated(morphology.pop(0))
 
             word = DefiniteArticle(word=token, case=case, gender=gender, number=number)
-        elif word_class == Class.VERB:
+        elif speech == Speech.VERB:
             mood = Mood.is_enumerated(morphology.pop(0))
             if mood == Mood.PARTICIPLE:
                 tense = Tense.is_enumerated(morphology.pop(0))
@@ -492,7 +495,7 @@ class MorphologyBWG(Morphology):
                 word=token, case=case, gender=gender, number=number,
                 mood=mood, tense=tense, voice=voice, person=person
             )
-        elif word_class == Class.ADJECTIVE:
+        elif speech == Speech.ADJECTIVE:
             i_type = TypeAdjective.is_enumerated(morphology.pop(0))
             case = CaseGeneric.is_enumerated(morphology.pop(0))
             gender = Gender.is_enumerated(morphology.pop(0))
@@ -500,24 +503,24 @@ class MorphologyBWG(Morphology):
             degree = Degree.is_enumerated(morphology.pop(0))
 
             word = Adjective(word=token, case=case, gender=gender, number=number, i_type=i_type, degree=degree)
-        elif word_class == Class.ADVERB:
+        elif speech == Speech.ADVERB:
 
             word = Adverb(word=token)
-        elif word_class == Class.CONJUNCTION:
+        elif speech == Speech.CONJUNCTION:
             i_type = TypeConjunction.is_enumerated(morphology.pop(0))
 
             word = Conjunction(word=token, i_type=i_type)
-        elif word_class == Class.PREPOSITION:
+        elif speech == Speech.PREPOSITION:
             case = CasePreposition.is_enumerated(morphology.pop(0))
 
             word = Preposition(word=token, case=case)
-        elif word_class == Class.PARTICLE:
+        elif speech == Speech.PARTICLE:
 
             word = Particle(word=token)
-        elif word_class == Class.INDECLINABLE_NOUN:
+        elif speech == Speech.INDECLINABLE_NOUN:
 
             word = Indeclinable(word=token)
-        elif word_class == Class.INTERJECTION:
+        elif speech == Speech.INTERJECTION:
 
             word = Interjection(word=token)
         else:

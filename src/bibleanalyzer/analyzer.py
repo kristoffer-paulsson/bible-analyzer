@@ -20,7 +20,41 @@
 #     Kristoffer Paulsson - initial implementation
 #
 """Context analyzer and meaning builder."""
+from bibleanalyzer.grammar import Grammar, Word, Speech, Mood
+from bibleanalyzer.model import WordToken
+
+
+class GrammarRule:
+    LINK_NOUN = 1
+    NOUN_TO_VERB = 2
 
 
 class Analyzer:
-    pass
+    def __init__(self):
+        pass
+
+    @classmethod
+    def analyze(cls, section: list):
+        grammar = dict()
+        for index, token in enumerate(section):
+            if token is WordToken:
+                word = Grammar.classify(token)
+                if word.speech in (Speech.NOUN, Speech.PRONOUN, Speech.DEFINITE_ARTICLE, Speech.ADJECTIVE):
+                    cls._add_rule(grammar, cls.link_noun(word), index)
+                if word.speech in (Speech.VERB,) and word.mood == Mood.PARTICIPLE:
+                    cls._add_rule(grammar, cls.link_verb(word), index)
+
+    @classmethod
+    def link_noun(cls, word: Word):
+        return GrammarRule.LINK_NOUN, word.case, word.gender, word.number
+
+    @classmethod
+    def link_verb(cls, word: Word):
+        return GrammarRule.NOUN_TO_VERB, word.case, word.gender, word.number
+
+    @classmethod
+    def _add_rule(cls, grammar: dict, rule: tuple, index: int):
+        if rule not in grammar:
+            grammar[rule] = list()
+        grammar[rule].append(index)
+

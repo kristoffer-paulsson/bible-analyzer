@@ -25,6 +25,7 @@ from pathlib import Path
 from pickle import Unpickler
 
 from . import Command
+from ..analyzer import Analyzer
 from ..data import BOOKS
 from ..grammar import Grammar
 from ..model import WordToken, PunctuationToken, VerseToken
@@ -42,6 +43,7 @@ class AnalyzeCommand(Command):
     def iterate(self, corpus: str):
         letters = set()
         stats = dict()
+        sections = dict()
 
         self.logger.info("Starting with parsing: {}".format(corpus.upper()))
         path = self._config.get("cache")
@@ -50,15 +52,30 @@ class AnalyzeCommand(Command):
             filename = path.joinpath("linear-{}.pickle".format(book))
             if not filename.is_file():
                 self.logger.error("The linear for {} is missing at: {}".format(book.capitalize(), filename))
-            self.analyze(filename, corpus, book)
+            sections[book] = self.analyze(filename, corpus, book)
 
+        print(json.dumps(sections))
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
-    def analyze(self, filename: Path, corpus: str, book: str):
+    def analyze(self, filename: Path, corpus: str, book: str) -> list:
+        sections = list()
         with filename.open("rb") as cache:
-            for token in Structor(Unpickler(cache).load()).line:
-                if isinstance(token, WordToken):
-                    Grammar.classify(token)
+            for section in Structor(Unpickler(cache).load()).section_iter():
+                Analyzer.analyze(section)
+        return sections
+
+    def export_json(self, filename: Path, corpus: str, book: str) -> list:
+        sections = list()
+        with filename.open("rb") as cache:
+            for section in Structor(Unpickler(cache).load()).secref_iter():
+                sections.append({
+                    "chapter": section[0],
+                    "verse": section[1],
+                    "after_word": section[2],
+                    "level": section[3]
+                })
+                # print(Grammar.classify(section))
+        return sections
 
 
 class Reconstructor:
