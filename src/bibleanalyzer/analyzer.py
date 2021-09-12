@@ -21,7 +21,8 @@
 #
 """Context analyzer and meaning builder."""
 from bibleanalyzer.grammar import Grammar, Word, Speech, Mood
-from bibleanalyzer.model import WordToken
+from bibleanalyzer.model import WordToken, Token, PunctuationToken, SectionToken, ChapterToken, VerseToken
+from bibleanalyzer.structor import Clause
 
 
 class GrammarRule:
@@ -34,15 +35,24 @@ class Analyzer:
         pass
 
     @classmethod
-    def analyze(cls, section: list):
+    def analyze(cls, clause: Clause) -> list:
         grammar = dict()
-        for index, token in enumerate(section):
-            if token is WordToken:
+        for index, token in enumerate(clause.line):
+            if isinstance(token, WordToken):
                 word = Grammar.classify(token)
                 if word.speech in (Speech.NOUN, Speech.PRONOUN, Speech.DEFINITE_ARTICLE, Speech.ADJECTIVE):
                     cls._add_rule(grammar, cls.link_noun(word), index)
-                if word.speech in (Speech.VERB,) and word.mood == Mood.PARTICIPLE:
-                    cls._add_rule(grammar, cls.link_verb(word), index)
+                # if word.speech in (Speech.VERB,) and word.mood == Mood.PARTICIPLE:
+                #    cls._add_rule(grammar, cls.link_verb(word), index)
+
+        terms = set()
+        for value in grammar.values():
+            subs = ""
+            for index in value:
+                subs += " " + clause.line[index].lexeme
+
+            terms.add(subs.strip())
+        return terms
 
     @classmethod
     def link_noun(cls, word: Word):

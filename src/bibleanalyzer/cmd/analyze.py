@@ -43,7 +43,7 @@ class AnalyzeCommand(Command):
     def iterate(self, corpus: str):
         letters = set()
         stats = dict()
-        sections = dict()
+        terms = set()
 
         self.logger.info("Starting with parsing: {}".format(corpus.upper()))
         path = self._config.get("cache")
@@ -52,17 +52,18 @@ class AnalyzeCommand(Command):
             filename = path.joinpath("linear-{}.pickle".format(book))
             if not filename.is_file():
                 self.logger.error("The linear for {} is missing at: {}".format(book.capitalize(), filename))
-            sections[book] = self.analyze(filename, corpus, book)
+            terms |= self.analyze(filename, corpus, book)
 
-        print(json.dumps(sections))
+        print(len(terms), terms)
         self.logger.info("Finished with corpus: {}".format(corpus.upper()))
 
-    def analyze(self, filename: Path, corpus: str, book: str) -> list:
-        sections = list()
+    def analyze(self, filename: Path, corpus: str, book: str) -> set:
+        terms = set()
         with filename.open("rb") as cache:
             for section in Structor(Unpickler(cache).load()).section_iter():
-                Analyzer.analyze(section)
-        return sections
+                for clause in section:
+                    terms |= Analyzer.analyze(clause)
+        return terms
 
     def export_json(self, filename: Path, corpus: str, book: str) -> list:
         sections = list()

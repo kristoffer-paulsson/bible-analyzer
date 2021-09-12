@@ -20,14 +20,97 @@
 #     Kristoffer Paulsson - initial implementation
 #
 """The purpose of the structor is to analyze and index a structure from the linear tokens."""
-from bibleanalyzer.model import ChapterToken, VerseToken, SectionToken, WordToken
+from bibleanalyzer.model import ChapterToken, VerseToken, SectionToken, WordToken, Linear, Token, PunctuationToken
 
 
-class Structor:
+class Section(Linear):
+
+    def __init__(self, offset: int, marker: SectionToken):
+        Linear.__init__(self, offset)
+
+        self._sentences = list()
+        self._sentences.append(Sentence(offset))
+        self._marker = marker
+
+    def dispatch(self, token: Token):
+        self.add(token)
+        if isinstance(token, PunctuationToken):
+            if token.diacritic in (".", ";"):
+                self._sentences[-1].marker(token)
+                self._sentences.append(Sentence(self._offset + len(self._linear)))
+                return
+
+        self._sentences[-1].dispatch(token)
+
+    def __str__(self) -> str:
+        return " ".join([str(s) for s in self._sentences])
+
+    def __iter__(self):
+        for sentence in self._sentences:
+            for clause in sentence._clauses:
+                yield clause
+
+
+class Sentence(Linear):
+
+    def __init__(self, offset: int):
+        Linear.__init__(self, offset)
+
+        self._clauses = list()
+        self._clauses.append(Clause(offset))
+        self._marker = None
+
+    def dispatch(self, token: Token):
+        self.add(token)
+        if isinstance(token, PunctuationToken):
+            if token.diacritic in ("·", ",", ":", "-"):
+                self._clauses[-1].marker(token)
+                self._clauses.append(Clause(self._offset + len(self._linear)))
+                return
+
+        self._clauses[-1].dispatch(token)
+
+    def marker(self, token: PunctuationToken):
+        self._marker = token
+
+    def __str__(self) -> str:
+        return " ".join([str(c) for c in self._clauses]) + (self._marker.diacritic if self._marker else "")
+
+
+class Clause(Linear):
+
+    def __init__(self, offset: int):
+        Linear.__init__(self, offset)
+        self._marker = None
+        self._tokens = list()
+
+    @property
+    def words(self) -> list:
+        return self._tokens
+
+    def dispatch(self, token: Token):
+        self.add(token)
+        if isinstance(token, WordToken):
+            self._tokens.append(token)
+        elif isinstance(token, (ChapterToken, VerseToken)):
+            return
+        else:
+            raise ValueError("Not a word token: {}".format(token))
+
+    def marker(self, token: PunctuationToken):
+        self._marker = token
+
+    def __str__(self) -> str:
+        return " ".join([t.word for t in self._tokens if isinstance(
+            t, WordToken)]) + (self._marker.diacritic if self._marker else "")
+
+
+class Structor(Linear):
     REF = -1
     SEC = -2
 
     def __init__(self, linear: list):
+        Linear.__init__(self, 0)
         self._linear = linear
         self._index = dict()
         self._ref = dict()
@@ -36,15 +119,12 @@ class Structor:
             2: list(),
             3: list()
         }
+        self._sections = list()
 
         self._structure()
 
         self._ctx = None
         self._slice = 0
-
-    @property
-    def line(self) -> list:
-        return self._linear
 
     def _structure(self):
         chapter = 1
@@ -79,6 +159,7 @@ class Structor:
                 self._ref[chapter][verse] = index
 
             elif isinstance(token, SectionToken):
+                self._sections.append((Section(index, token)))
                 self._index[chapter][verse][word] = token.level
                 level = abs(token.level)
                 if level == 1:
@@ -93,6 +174,9 @@ class Structor:
                 else:
                     pass
                     # raise ValueError("Invalid section level: {}".format(token))
+
+            if not isinstance(token, SectionToken):
+                self._sections[-1].dispatch(token)
 
     def _backtrack(self, index: int, level: int = 1) -> int:
         indices = filter(self._sec.keys(), lambda x: x <= level, reversed=True)
@@ -146,8 +230,10 @@ class Structor:
     #    self._ctx = None
 
     def section_iter(self, level: int = 1, index: int = 0):
-        for current in range(len(self._sec[level]) - 1):
-            yield self._linear[self._sec[level][current]:self._sec[level][current + 1]]
+        for section in self._sections:
+            yield section
+        # for current in range(len(self._sec[level]) - 1):
+        #    yield self._linear[self._sec[level][current]:self._sec[level][current + 1]]
 
     def secref_iter(self):
         for chapter in self._index.keys():

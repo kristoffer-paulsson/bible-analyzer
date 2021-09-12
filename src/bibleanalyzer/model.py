@@ -42,28 +42,54 @@ class DataEntry:
     words: List[GreekWord] = field(default_factory=list)
 
 
+class Token:
+    pass
+
+
 @dataclass
-class WordToken:
+class WordToken(Token):
     word: str = None
     lexeme: str = None
     grammar: str = None
 
 
 @dataclass
-class PunctuationToken:
+class PunctuationToken(Token):
     diacritic: str = None
 
 
 @dataclass
-class ChapterToken:
+class ChapterToken(Token):
     number: int = 0
 
 
 @dataclass
-class VerseToken:
+class VerseToken(Token):
     number: int = 0
 
 
 @dataclass
-class SectionToken:
+class SectionToken(Token):
     level: int = 1
+
+
+class Linear:
+
+    def __init__(self, offset: int):
+        self._offset = offset
+        self._linear = list()
+
+    @property
+    def offset(self) -> int:
+        return self._offset
+
+    @property
+    def line(self) -> list:
+        return self._linear
+
+    def add(self, token: Token):
+        self._linear.append(token)
+
+    def __iter__(self):
+        for token in self._linear:
+            yield token
