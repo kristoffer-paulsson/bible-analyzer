@@ -103,6 +103,9 @@ class TextLoader(Processor):
         self._entry = None
         self._verify = ""
 
+        # All missing verses reported.
+        self._missing = list()
+
     @property
     def data(self) -> list:
         return self._data
@@ -110,6 +113,21 @@ class TextLoader(Processor):
     @property
     def verify(self) -> str:
         return self._verify.strip()
+
+    @property
+    def stats(self) -> dict:
+        data = list()
+        for entry in self.data:
+            if entry.words:
+                data.append(len(entry.words))
+        return {"max": max(data), "min": min(data), "avg": sum(data) / len(data)}
+
+    @property
+    def telemetry(self) -> dict:
+        return {
+            "missing": self._missing,
+            **self.stats
+        }
 
     def process(self, filename: Path):
         self.logger.info("Load corpus: {}".format(filename.name))
@@ -194,6 +212,13 @@ class TextLoader(Processor):
 
         if not line["text"]:
             self._skip = True
+            self._missing.append({
+                "book": book,
+                "chapter": chapter,
+                "verse": verse,
+                "translation": line["translation"],
+                "line": self._line_cnt
+            })
             self.logger.warning(
                 Logger.file_format("{book} {chapter}:{verse} ({translation}) is missing in".format(
                     book=book, chapter=chapter, verse=verse, translation=line["translation"]),
@@ -225,7 +250,6 @@ class TextLoader(Processor):
             text=line["text"],
             translation=line["translation"]
         )
-        self._total_cnt += 1
         self._verse_cnt += 1
 
     def process_end(self):

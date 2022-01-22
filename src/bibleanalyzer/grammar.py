@@ -29,10 +29,11 @@ from enum import Enum
 from typing import List
 
 from bibleanalyzer.model import WordToken
+from bibleanalyzer.transform import Koine
 
 
 class GrammarWarning(RuntimeWarning):
-    """"Warnings to be thrown because of grammatical invariants."""
+    """Warnings to be thrown because of grammatical invariants."""
 
 
 class Word:
@@ -260,6 +261,10 @@ class WordBWG(Word):
         self._degree = degree
         self._type = i_type
 
+    def __str__(self) -> str:
+        return "".format()
+
+
     @property
     def speech(self) -> Speech:
         return self._speech
@@ -413,6 +418,25 @@ class Indeclinable(WordBWG):
 class MorphologyBWG(Morphology):
     """Represents BibleWorks greek morphology."""
 
+    SPEECH = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Speech.__members__.items())
+    CASE_GENERIC = dict((k.lower(), v.lower().replace("_", " ")) for v, k in CaseGeneric.__members__.items())
+    CASE_PREPOSITIONS = dict((k.lower(), v.lower().replace("_", " ")) for v, k in CasePreposition.__members__.items())
+    GENDER = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Gender.__members__.items())
+    NUMBER = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Number.__members__.items())
+    MOOD = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Mood.__members__.items())
+    TENSE = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Tense.__members__.items())
+    VOICE = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Voice.__members__.items())
+    PERSON = {
+        "1": "1st person",
+        "2": "2nd person",
+        "3": "3rd person"
+    }
+    DEGREE = dict((k.lower(), v.lower().replace("_", " ")) for v, k in Degree.__members__.items())
+    TYPE_NOUN = dict((k.lower(), v.lower().replace("_", " ")) for v, k in TypeNoun.__members__.items())
+    TYPE_PRONOUN = dict((k.lower(), v.lower().replace("_", " ")) for v, k in TypePronoun.__members__.items())
+    TYPE_ADJECTIVE = dict((k.lower(), v.lower().replace("_", " ")) for v, k in TypeAdjective.__members__.items())
+    TYPE_CONJUNCTION = dict((k.lower(), v.lower().replace("_", " ")) for v, k in TypeConjunction.__members__.items())
+
     @classmethod
     def parse(cls, token: WordToken) -> Word:
         morphology = list(token.grammar)
@@ -531,9 +555,117 @@ class MorphologyBWG(Morphology):
 
         return word
 
+    @classmethod
+    def format_morphology(cls, word: WordBWG) -> str:
+        if isinstance(word, Split):
+            return "({})".format(" ALT ".join([cls.format_morphology(grammar) for grammar in word.alternatives]))
+        elif isinstance(word, Compound):
+            return "({})".format(" AND ".join([cls.format_morphology(grammar) for grammar in word.all]))
+        elif isinstance(word, Several):
+            return "({})".format(" WITH ".join([cls.format_morphology(grammar) for grammar in word.multiple]))
+        elif isinstance(word, Noun):
+            return "{speech} case={case} gender={gender} number={number} type={i_type}".format(
+                speech=cls.SPEECH[Speech.NOUN].title(),
+                case=cls.CASE_GENERIC[word.case],
+                gender=cls.GENDER[word.gender],
+                number=cls.NUMBER[word.number],
+                i_type=cls.TYPE_NOUN[word.type],
+            )
+        elif isinstance(word, Pronoun):
+            return "{speech} type={i_type} case={case} gender={gender} number={number}".format(
+                speech=cls.SPEECH[Speech.PRONOUN].title(),
+                i_type=cls.TYPE_PRONOUN[word.type],
+                case=cls.CASE_GENERIC[word.case],
+                gender=cls.GENDER[word.gender],
+                number=cls.NUMBER[word.number],
+            )
+        elif isinstance(word, DefiniteArticle):
+            return "{speech} case={case} gender={gender} number={number}".format(
+                speech=cls.SPEECH[Speech.DEFINITE_ARTICLE].title(),
+                case=cls.CASE_GENERIC[word.case],
+                gender=cls.GENDER[word.gender],
+                number=cls.NUMBER[word.number],
+            )
+        elif isinstance(word, Verb):
+            if word.mood == Mood.PARTICIPLE:
+                return "{speech} mood={mood} tense={tense} voice={voice} case={case} gender={gender} number={number}".format(
+                    speech=cls.SPEECH[Speech.VERB].title(),
+                    mood=cls.MOOD[word.mood],
+                    tense=cls.TENSE[word.tense],
+                    voice=cls.VOICE[word.voice],
+                    case=cls.CASE_GENERIC[word.case],
+                    gender=cls.GENDER[word.gender],
+                    number=cls.NUMBER[word.number],
+                )
+            elif word.mood == Mood.INFINITIVE:
+                return "{speech} mood={mood} tense={tense} voice={voice}".format(
+                    speech=cls.SPEECH[Speech.VERB].title(),
+                    mood=cls.MOOD[word.mood],
+                    tense=cls.TENSE[word.tense],
+                    voice=cls.VOICE[word.voice],
+                )
+            else:
+                return "{speech} mood={mood} tense={tense} voice={voice} person={person} number={number}".format(
+                    speech=cls.SPEECH[Speech.VERB].title(),
+                    mood=cls.MOOD[word.mood],
+                    tense=cls.TENSE[word.tense],
+                    voice=cls.VOICE[word.voice],
+                    person=cls.PERSON[word.person],
+                    number=cls.NUMBER[word.number],
+                )
+        elif isinstance(word, Adjective):
+            return "{speech} type={i_type} case={case} gender={gender} number={number} degree={degree}".format(
+                speech=cls.SPEECH[Speech.ADJECTIVE].title(),
+                i_type=cls.TYPE_ADJECTIVE[word.type],
+                case=cls.CASE_GENERIC[word.case],
+                gender=cls.GENDER[word.gender],
+                number=cls.NUMBER[word.number],
+                degree=cls.DEGREE[word.degree],
+            )
+        elif isinstance(word, Adverb):
+            return "{speech}".format(
+                speech=cls.SPEECH[Speech.ADVERB].title(),
+            )
+        elif isinstance(word, Conjunction):
+            return "{speech} type={i_type}".format(
+                speech=cls.SPEECH[Speech.CONJUNCTION].title(),
+                i_type=cls.TYPE_CONJUNCTION[word.type],
+            )
+        elif isinstance(word, Preposition):
+            return "{speech} case={case}".format(
+                speech=cls.SPEECH[Speech.PREPOSITION].title(),
+                case=cls.CASE_PREPOSITIONS[word.case],
+            )
+        elif isinstance(word, Particle):
+            return "{speech}".format(
+                speech=cls.SPEECH[Speech.PARTICLE].title(),
+            )
+        elif isinstance(word, Indeclinable):
+            return "{speech}".format(
+                speech=cls.SPEECH[Speech.INDECLINABLE_NOUN].title(),
+            )
+        elif isinstance(word, Interjection):
+            return "{speech}".format(
+                speech=cls.SPEECH[Speech.INTERJECTION].title(),
+            )
+        else:
+            raise GrammarWarning("The current word {} is of unknown class. {}".format(type(word), word))
+
+    @classmethod
+    def format_word(cls, word: WordBWG) -> str:
+        return "{lexeme} ({normal}) {morphology}".format(
+            lexeme=word.word.lexeme,
+            normal=Koine.latinize( word.word.lexeme),  # "+".join([Koine.latinize(part) for part in word.word.lexeme.split("+")]),
+            morphology=cls.format_morphology(word)
+        )
+
 
 class Grammar:
 
     @classmethod
     def classify(cls, word: WordToken) -> Word:
         return MorphologyBWG.parse(word)
+
+    @classmethod
+    def format(cls, word: Word):
+        return MorphologyBWG.format_word(word)

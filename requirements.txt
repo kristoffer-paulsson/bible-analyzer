@@ -1,0 +1,7 @@
+pip
+setuptools
+wheel
+coverage
+sphinx
+recommonmark
+sphinx_rtd_theme

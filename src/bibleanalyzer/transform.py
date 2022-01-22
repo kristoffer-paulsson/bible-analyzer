@@ -76,6 +76,13 @@ ROUGH_LOWER = {
 
 ROUGH = ROUGH_UPPER | ROUGH_LOWER | {"῝", "῞", "῟", "῾"}
 
+GAMMA_NASAL = {
+    "γγ": "νγ",
+    "γκ": "νκ",
+    "γχ": "νχ",
+    "γξ": "νξ",
+}
+
 NORMALIZE = {
     'Ͱ': "Ͱ", 'ͱ': "ͱ", 'Ͳ': "Ϡ", 'ͳ': "ϡ", 'ʹ': "ʹ", '͵': "͵", 'Ͷ': "Ϝ", 'ͷ': "ϝ", 'ͺ': "ͺ", 'ͻ': "σ", 'ͼ': "σ",
     'ͽ': "σ", ';': ";", 'Ϳ': "Ϳ", '΄': "΄", '΅': "΅", 'Ά': "Α", '·': "·", 'Έ': "Ε", 'Ή': "Η", 'Ί': "Ι", 'Ό': "Ο",
@@ -158,14 +165,13 @@ class Koine:
 
     @classmethod
     def latinize(cls, word: str) -> str:
-        bits = list(cls.normalize(word))
+        bits = list(cls.gammal_nasal(cls.normalize(word)))
         upper = bits[0].isupper()
         transliterated = "h" if ROUGH.intersection(set(bits)) else ""
 
         for char in bits:
-            token = list(filter(lambda b: char in b, GREEK_LATIN.keys()))
-            if token:
-                transliterated += GREEK_LATIN[token[0]]
+            char = char.lower()
+            transliterated += GREEK_LATIN[char] if char in GREEK_LATIN else char
 
         return transliterated.title() if upper else transliterated
 
@@ -175,7 +181,7 @@ class Koine:
         normal = ""
 
         for char in bits:
-            normal += NORMALIZE[char]
+            normal += NORMALIZE[char] if char in NORMALIZE else char
 
         return normal
 
@@ -188,6 +194,12 @@ class Koine:
             expand += EXPAND[char] if char in EXPAND.keys() else char
 
         return expand
+
+    @classmethod
+    def gammal_nasal(cls, word: str) -> str:
+        for i, j in GAMMA_NASAL.items():
+            word = word.replace(i, j)
+        return word
 
     @classmethod
     def contains_upper(cls, word: str) -> bool:

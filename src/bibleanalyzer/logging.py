@@ -60,7 +60,7 @@ class Logger(logging.Logger):
 
     @classmethod
     def file_format(cls, msg: str, path: Path, line: int, token: str = "here") -> str:
-        return "{}:\n  File \"{}\", line {}, in {}.".format(msg, path, line, token)
+        return "{}:\n  File \"{}\", line {}, in {}".format(msg, path, line, token)
 
     @classmethod
     def create(cls, config, command):

@@ -24,6 +24,7 @@ import sys
 from pathlib import Path, PurePath
 
 from setuptools import setup
+from sphinx.setup_command import BuildDoc
 
 here = PurePath(__file__)
 sys.path.append(here.parents[0].joinpath("src"))
@@ -45,6 +46,9 @@ setup(
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
     entry_points={"console_scripts": ["bible-analyzer = bibleanalyzer.main:main"]},
+    cmdclass={
+        "build_sphinx": BuildDoc,
+    },
     classifiers=[
         "Intended Audience :: Religion",
         "License :: OSI Approved :: ISC License (ISCL)"
