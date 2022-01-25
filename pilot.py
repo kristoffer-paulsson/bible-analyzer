@@ -42,7 +42,7 @@ class TestRig(TestCase):
     def test_pilot(self):
         bible = Bible()
         bible.reference("1_peter 3:2")
-        bible.loader()
+        bible.liner()
 
     def test_preposition_generation(self):
         prepositions = set()

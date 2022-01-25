@@ -22,6 +22,7 @@
 """Bible class for examining certain passages based on bible reference."""
 from bibleanalyzer.app import Application
 from bibleanalyzer.data import CORPUS, NEW_TESTAMENT
+from bibleanalyzer.liner import LinerIterator
 from bibleanalyzer.loader import LoaderIterator
 from bibleanalyzer.util.reference import BibleReference
 
@@ -45,4 +46,5 @@ class Bible:
                 print(verse)
 
     def liner(self):
-        pass
+        for token in LinerIterator(LoaderIterator(Application.instance().config.get("corpus").joinpath("nt/mark.txt"), CORPUS[NEW_TESTAMENT]), "mark"):
+            Application.instance().logger.info(token)
