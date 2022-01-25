@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from bibleanalyzer.transform import Koine, EXPAND
+from bibleanalyzer.util.transliterator import KoineTransliterator, EXPAND
 
 # https://en.wikipedia.org/wiki/Greek_alphabet
 
@@ -37,12 +37,12 @@ TEST = set(sorted(set(GREEK))[2:])
 
 class TestKoine(TestCase):
 
-    def test_latinize(self):
-        self.fail()
+    def test_transliterate(self):
+        self.assertEqual(" ".join([KoineTransliterator.transliterate(words) for words in "Ἐν ἀρχῇ ἦν ὁ λόγος".split(" ")]), "En archē ēn ho logos")
 
     def test_normalize(self):
         test = TEST - set(EXPAND.keys())
-        Koine.normalize("".join(test))
+        KoineTransliterator.normalize("".join(test))
 
     def test_expand(self):
         for value in EXPAND.values():
@@ -50,5 +50,5 @@ class TestKoine(TestCase):
             self.assertNotEqual(value[0], "ι")
 
     def test_contains_upper(self):
-        self.assertTrue(Koine.contains_upper('Ἡ'))
-        self.assertFalse(Koine.contains_upper("ι"))
+        self.assertTrue(KoineTransliterator.contains_upper('Ἡ'))
+        self.assertFalse(KoineTransliterator.contains_upper("ι"))

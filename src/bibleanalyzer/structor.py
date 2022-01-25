@@ -20,7 +20,7 @@
 #     Kristoffer Paulsson - initial implementation
 #
 """The purpose of the structor is to analyze and index a structure from the linear tokens."""
-from bibleanalyzer.model import ChapterToken, VerseToken, SectionToken, WordToken, Linear, Token, PunctuationToken
+from bibleanalyzer.util.model import ChapterToken, VerseToken, SectionToken, WordToken, Linear, Token, PunctuationToken
 
 
 class Section(Linear):

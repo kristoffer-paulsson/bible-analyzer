@@ -67,6 +67,7 @@ BOOKS = """
     "haggai",
     "zechariah",
     "malachi",
+    "wisdom",
     "sirach",
     "letter_of_jeremiah",
     "tobit",
@@ -103,3 +104,11 @@ BOOKS = """
   ]
 }
 """
+
+OLD_TESTAMENT = "ot"
+NEW_TESTAMENT = "nt"
+
+CORPUS = {
+    "ot": "LXT",
+    "nt": "NA28",
+}

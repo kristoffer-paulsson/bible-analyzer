@@ -27,8 +27,7 @@ from pickle import Unpickler
 from . import Command
 from ..analyzer import Analyzer
 from ..data import BOOKS
-from ..grammar import Grammar
-from ..model import WordToken, PunctuationToken, VerseToken
+from bibleanalyzer.util.model import WordToken, PunctuationToken, VerseToken
 from ..structor import Structor
 
 

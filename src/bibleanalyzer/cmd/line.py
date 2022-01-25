@@ -27,7 +27,7 @@ from pickle import Pickler, Unpickler
 from . import Command
 from ..data import BOOKS
 from ..liner import Liner
-from ..model import WordToken, PunctuationToken, VerseToken
+from bibleanalyzer.util.model import WordToken, PunctuationToken, VerseToken
 
 
 class LineCommand(Command):

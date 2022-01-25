@@ -1,6 +1,6 @@
 import csv
 
-from bibleanalyzer.transform import Koine
+from bibleanalyzer.util.transliterator import KoineTransliterator
 
 if __name__ == '__main__':
     tdnt_list = dict()
@@ -8,7 +8,7 @@ if __name__ == '__main__':
     for line in open("./corpus/meta/TDNT-wordlist.txt", "r"):
         try:
             line = line.strip()
-            tdnt_list[Koine.latinize(Koine.normalize(line))] = line
+            tdnt_list[KoineTransliterator.latinize(KoineTransliterator.normalize(line))] = line
         except KeyError:
             pass
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     phrases = list()
     for row in csv.reader(open("./corpus/meta/wordlist.csv", "r")):
         try:
-            lemma = Koine.latinize(Koine.normalize(row[0]))
+            lemma = KoineTransliterator.latinize(KoineTransliterator.normalize(row[0]))
             if lemma in keys:
                 tdnt.append(tdnt_list[lemma])
                 if len(tdnt) > 300:

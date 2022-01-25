@@ -26,9 +26,9 @@ import logging
 from argparse import Namespace
 from collections import ChainMap
 
-from ..config import Config
+from bibleanalyzer.app.config import Config
 from ..data import NAME, VERSION
-from ..logging import Logger
+from bibleanalyzer.app.logging import Logger
 
 
 class Command:

@@ -19,7 +19,7 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-"""Ancient Greek transformer."""
+"""Ancient Greek transliterator."""
 
 """Bellow you find an example of all koine and coptic greek characters found at Wikipedia:
 https://en.wikipedia.org/wiki/Greek_alphabet"""
@@ -124,7 +124,25 @@ EXPAND = {
     'ῴ': "ώι", 'ῷ': "ῶι", 'ῼ': "Ωι"
 }
 
+CLEAN = {
+    'ᾀ': "ἀ", 'ᾁ': "ἁ", 'ᾂ': "ἂ", 'ᾃ': "ἃ", 'ᾄ': "ἄ", 'ᾅ': "ἅ", 'ᾆ': "ἆ", 'ᾇ': "ἇ", 'ᾈ': "Ἀ", 'ᾉ': "Ἁ",
+    'ᾊ': "Ἂ", 'ᾋ': "Ἃ", 'ᾌ': "Ἄ", 'ᾍ': "Ἅ", 'ᾎ': "Ἆ", 'ᾏ': "Ἇ", 'ᾐ': "ἠ", 'ᾑ': "ἡ", 'ᾒ': "ἢ", 'ᾓ': "ἣ",
+    'ᾔ': "ἤ", 'ᾕ': "ἥ", 'ᾖ': "ἦ", 'ᾗ': "ἧ", 'ᾘ': "Ἠ", 'ᾙ': "Ἡ", 'ᾚ': "Ἢ", 'ᾛ': "Ἣ", 'ᾜ': "Ἤ", 'ᾝ': "Ἥ",
+    'ᾞ': "Ἦ", 'ᾟ': "Ἧ", 'ᾠ': "ὠ", 'ᾡ': "ὡ", 'ᾢ': "ὢ", 'ᾣ': "ὣ", 'ᾤ': "ὤ", 'ᾥ': "ὥ", 'ᾦ': "ὦ", 'ᾧ': "ὧ",
+    'ᾨ': "Ὠ", 'ᾩ': "Ὡ", 'ᾪ': "Ὢ", 'ᾫ': "Ὣ", 'ᾬ': "Ὤ", 'ᾭ': "Ὥ", 'ᾮ': "Ὦ", 'ᾯ': "Ὧ", 'ᾲ': "ὰ", 'ᾳ': "α",
+    'ᾴ': "ά", 'ᾷ': "ᾶ", 'ᾼ': "Α", 'ῂ': "ὴ", 'ῃ': "η", 'ῄ': "ή", 'ῇ': "ῆ", 'ῌ': "Η", 'ῲ': "ὼ", 'ῳ': "ω",
+    'ῴ': "ώ", 'ῷ': "ῶ", 'ῼ': "Ω"
+}
+
 LETTERS = set(NORMALIZE.keys()) | set(EXPAND.keys())
+
+SBL_DIPHTONGS = {
+    "ay": "au",
+    "ey": "eu",
+    "ey": "ēu",
+    "oy": "ou",
+    "yi": "ui"
+}
 
 # Letters
 CHAR = (
@@ -159,15 +177,43 @@ GREEK_LATIN = {
     'ω': "ō",
 }
 
+SBL_GREEK_LATIN = {
+    'α': "a",
+    'β': "b",
+    'γ': "g",
+    'δ': "d",
+    'ε': "e",
+    'ζ': "z",
+    'η': "ē",
+    'θ': "th",
+    'ι': "i",
+    'κ': "k",
+    'λ': "l",
+    'μ': "m",
+    'ν': "n",
+    'ξ': "x",
+    'ο': "o",
+    'π': "p",
+    'ρ': "r",  # "rh"
+    'σ': "s",
+    'ς': "s",
+    'τ': "t",
+    'υ': "y",
+    'φ': "ph",
+    'χ': "ch",
+    'ψ': "ps",
+    'ω': "ō",
+}
 
-class Koine:
+
+class KoineTransliterator:
     """Transliterates ancient greek into exact transliteration."""
 
     @classmethod
     def latinize(cls, word: str) -> str:
-        bits = list(cls.gammal_nasal(cls.normalize(word)))
+        bits = list(cls.gamma_nasal(cls.normalize(word)))
         upper = bits[0].isupper()
-        transliterated = "h" if ROUGH.intersection(set(bits)) else ""
+        transliterated = "h" if cls.has_rough(word) else ""
 
         for char in bits:
             char = char.lower()
@@ -176,8 +222,38 @@ class Koine:
         return transliterated.title() if upper else transliterated
 
     @classmethod
+    def transliterate(cls, word: str) -> str:
+        bits = list(cls.gamma_nasal(cls.normalize2(word)))
+        upper = bits[0].isupper()
+        transliterated = "h" if cls.has_rough(word) else ""
+
+        for char in bits:
+            char = char.lower()
+            transliterated += SBL_GREEK_LATIN[char] if char in SBL_GREEK_LATIN else char
+
+        transliterated = cls.diphthongs(transliterated)
+
+        return transliterated.title() if upper else transliterated
+
+    @classmethod
+    def diphthongs(cls, word: str) -> str:
+        for i, j in SBL_DIPHTONGS.items():
+            word = word.replace(i, j)
+        return word
+
+    @classmethod
     def normalize(cls, word: str) -> str:
         bits = list(cls.expand(word))
+        normal = ""
+
+        for char in bits:
+            normal += NORMALIZE[char] if char in NORMALIZE else char
+
+        return normal
+
+    @classmethod
+    def normalize2(cls, word: str) -> str:
+        bits = list(cls.clean(word))
         normal = ""
 
         for char in bits:
@@ -196,7 +272,17 @@ class Koine:
         return expand
 
     @classmethod
-    def gammal_nasal(cls, word: str) -> str:
+    def clean(cls, word: str) -> str:
+        bits = list(word)
+        expand = ""
+
+        for char in bits:
+            expand += CLEAN[char] if char in CLEAN.keys() else char
+
+        return expand
+
+    @classmethod
+    def gamma_nasal(cls, word: str) -> str:
         for i, j in GAMMA_NASAL.items():
             word = word.replace(i, j)
         return word

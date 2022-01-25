@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2021 by Kristoffer Paulsson <kristoffer.paulsson@talenten.se>.
+# Copyright (c) 2022 by Kristoffer Paulsson <kristoffer.paulsson@talenten.se>.
 #
 # Permission to use, copy, modify, and/or distribute this software for any purpose with
 # or without fee is hereby granted, provided that the above copyright notice and this
@@ -19,26 +19,4 @@
 # Contributors:
 #     Kristoffer Paulsson - initial implementation
 #
-
-from bibleanalyzer.app.logging import Logger
-
-
-class Processor:
-    """Processor is a baseclass used for processing data in the BibleAnalyzer."""
-
-    def __init__(self, logger: Logger):
-        self._data = None
-        self.logger = logger
-
-    @property
-    def data(self) -> object:
-        return self._data
-
-
-__all__ = [
-    "Processor"
-]
-
-
-class ProcessException(RuntimeWarning):
-    """Process exception is thrown when a process won't handle its match."""
+"""All reusable classes and utilities."""

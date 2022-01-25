@@ -22,11 +22,12 @@
 """Parsing liner. Lines up the corpora parsings in a linear fashion and caches them for analysis."""
 import re
 
-from bibleanalyzer.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry, SectionToken
-from bibleanalyzer.transform import Koine
+from bibleanalyzer.util.model import PunctuationToken, WordToken, ChapterToken, VerseToken, DataEntry, SectionToken
+from bibleanalyzer.util.transliterator import KoineTransliterator
 from . import Processor, ProcessException
-from .grammar import Grammar, Speech, TypeNoun
-from .logging import Logger
+from .grammar import Grammar
+from bibleanalyzer.app.logging import Logger
+from .util.morphology import Speech, TypeNoun
 
 TOKEN_REGEX = r"""([᾽\w]+|[\W])"""
 PUNCTUATION = ("·", ".", ",", ";", ":", "-")
@@ -64,7 +65,7 @@ class Liner(Processor):
         return self._verify.strip()
 
     def _stat(self, letters: str):
-        for char in set(Koine.expand(letters)):
+        for char in set(KoineTransliterator.expand(letters)):
             if char not in self._stats.keys():
                 self._stats[char] = 1
             else:
@@ -120,13 +121,13 @@ class Liner(Processor):
                 if not verse_first:
                     yield stack[0]
 
-                    if Koine.contains_upper(token.word):
+                    if KoineTransliterator.contains_upper(token.word):
                         yield SectionToken()
 
                 for item in stack[idx:]:
                     yield item
 
-                if Koine.contains_upper(token.word) and verse_first:
+                if KoineTransliterator.contains_upper(token.word) and verse_first:
                     word = Grammar.classify(token)
                     if word.speech == Speech.NOUN and word.type == TypeNoun.PROPER:
                         yield SectionToken(level=-1)
@@ -152,10 +153,10 @@ class Liner(Processor):
             if token:
                 if token in PUNCTUATION:
                     yield PunctuationToken(diacritic=token)
-                elif Koine.koine_only(token):
+                elif KoineTransliterator.koine_only(token):
                     word = item.words[word_count]
 
-                    if Koine.normalize(word.word).lower() != Koine.normalize(token).lower():
+                    if KoineTransliterator.normalize(word.word).lower() != KoineTransliterator.normalize(token).lower():
                         raise ProcessException("Not the right word. {} {}".format(token, word.word))
 
                     word_count += 1

@@ -24,12 +24,14 @@ import json
 from unittest import TestCase
 
 from bibleanalyzer import Logger
-from bibleanalyzer.config import Config
+from bibleanalyzer.bible import Bible
+from bibleanalyzer.app.config import Config
 from bibleanalyzer.data import BOOKS
 from bibleanalyzer.grammar import Grammar
 from bibleanalyzer.liner import Liner
 from bibleanalyzer.loader import TextLoader
-from bibleanalyzer.model import WordToken, ChapterToken, VerseToken
+from bibleanalyzer.util.model import WordToken, ChapterToken, VerseToken
+from bibleanalyzer.util.morphology import Speech
 
 
 class TestRig(TestCase):
@@ -38,6 +40,38 @@ class TestRig(TestCase):
         self.logger = Logger.create(self.config, "pilot")
 
     def test_pilot(self):
+        bible = Bible()
+        bible.reference("1_peter 3:2")
+        bible.loader()
+
+    def test_preposition_generation(self):
+        prepositions = set()
+        for book in json.loads(BOOKS)["nt"]:
+            loader = TextLoader(self.logger, "NA28")
+            loader.process(self.config.get("corpus").joinpath("nt/{0}.txt".format(book)))
+
+            liner = Liner(self.logger)
+            liner.process(loader.data, book)
+
+            chapter = 1
+            verse = 1
+            for item in liner.linear:
+                if isinstance(item, WordToken):
+                    word = Grammar.classify(item)
+                    if word.speech == Speech.PREPOSITION:
+                        prepositions.add(Grammar.format(word))
+                        #
+                elif isinstance(item, ChapterToken):
+                    chapter = item.number
+                elif isinstance(item, VerseToken):
+                    verse = item.number
+
+        prepositions = list(prepositions)
+        prepositions.sort()
+        for prep in prepositions:
+            self.logger.info("{0}".format(prep))
+
+    def test_liner_output(self):
         for book in json.loads(BOOKS)["nt"]:
             loader = TextLoader(self.logger, "NA28")
             loader.process(self.config.get("corpus").joinpath("nt/{0}.txt".format(book)))

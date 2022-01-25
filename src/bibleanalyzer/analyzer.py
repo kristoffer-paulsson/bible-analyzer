@@ -20,8 +20,8 @@
 #     Kristoffer Paulsson - initial implementation
 #
 """Context analyzer and meaning builder."""
-from bibleanalyzer.grammar import Grammar, Word, Speech, Mood
-from bibleanalyzer.model import WordToken, Token, PunctuationToken, SectionToken, ChapterToken, VerseToken
+from bibleanalyzer.grammar import Grammar, Word, Speech
+from bibleanalyzer.util.model import WordToken
 from bibleanalyzer.structor import Clause
 
 

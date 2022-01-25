@@ -25,8 +25,10 @@ import re
 from pathlib import Path
 
 from . import Processor, ProcessException
-from .logging import Logger
-from .model import DataEntry, GreekWord
+from bibleanalyzer.app.logging import Logger
+from bibleanalyzer.util.model import DataEntry, GreekWord
+from .app import Application
+from .util.reference import BibleReferenceCounter
 
 VERSE_REGEX = r"""(?P<translation>\S+) (?P<book>\S+) (?P<chapter>\d+)\:(?P<verse>\d+) (?P<text>\S.*)"""
 HLINE_REGEX = r"""^\.*\n(_+)\n.*$"""
@@ -38,6 +40,191 @@ TOKEN_REGEX = r"""([·.,;:]|[^[·\.,;: \(\)\[\]]\s]+)"""
 
 class StateError(RuntimeWarning):
     """State machine throws this exception at wrongful attempt to change the state."""
+
+
+class LoaderIterator:
+
+    def __init__(self, filename: Path, translation: str):
+        self._filename = filename
+        self._translation = translation
+
+        self._tasks = (
+            None,
+            self._start,
+            self._text,
+            self._line,
+            self._word,
+            self._end
+        )
+
+        self._logger = Application.instance().logger
+        self._data = list()
+
+        self._machine = None
+        self._skip = False
+
+        self._counter = None
+        self._cur_book = None
+
+        self._line_cnt = 0
+        self._total_cnt = 0
+        self._word_cnt = 1
+
+        self._entry = None
+
+    def _file_iter(self):
+        with self._filename.open("r") as doc:
+            for line in doc:
+                self._line_cnt += 1
+                match = re.match(WHOLE_REGEX, line)
+                if match:
+                    yield match.groupdict()
+
+    def _proc_iter(self):
+        self._logger.info("Load corpus: {}".format(self._filename.name))
+
+        try:
+            for line in self._file_iter():
+                if not line:
+                    continue
+
+                self._switch(line)
+                try:
+                    self._tasks[self._machine.state](line)
+                except ProcessException as e:
+                    self._logger.error(Logger.file_format(e, self._filename, self._line_cnt))
+                for entry in self._data:
+                    yield entry
+                self._data.clear()
+
+            self._machine.goto(StateMachine.END)
+            self._tasks[self._machine.state]()
+            for entry in self._data:
+                yield entry
+            self._data.clear()
+        except StateError as e:
+            self._logger.error(Logger.file_format(
+                "{} The parser suffered from a state machine error, skipping".format(e),
+                self._filename, self._line_cnt
+            ))
+
+    def _switch(self, line: dict):
+        self._logger.debug(list(filter(None, line.values())))
+
+        # In case a verse has been left out we reset the state machine and start over.
+        if line["translation"] and self._machine.state is StateMachine.LINE:
+            self._data.append(self._entry)
+            self._entry = None
+            self._machine.reset()
+            self._machine.goto(StateMachine.TEXT)
+
+        elif line["translation"] and self._machine.state is not StateMachine.TEXT:
+            if self._machine.state == StateMachine.WORD:
+                self._data.append(self._entry)
+                self._entry = None
+            self._machine.goto(StateMachine.TEXT)
+        elif line["line"] and self._machine.state is not StateMachine.LINE:
+            self._machine.goto(StateMachine.LINE)
+        elif line["index"] and self._machine.state is not StateMachine.WORD:
+            self._machine.goto(StateMachine.WORD)
+            self._word_cnt = 1
+
+    def _start(self, line: dict):
+        pass
+
+    def _text(self, line: dict):
+        if not line["translation"]:
+            self._logger.error(Logger.file_format("Expected a translation", self._filename, self._line_cnt))
+        elif line["translation"] != self._translation:
+            return
+
+        book = line["book"]
+        chapter = int(line["chapter"])
+        verse = int(line["verse"])
+
+        if not line["text"]:
+            self._skip = True
+            self._logger.warning(
+                Logger.file_format("{book} {chapter}:{verse} ({translation}) is missing in".format(
+                    book=book, chapter=chapter, verse=verse, translation=line["translation"]),
+                    self._filename, self._line_cnt, "corpus"
+                )
+            )
+
+        if book:
+            self._cur_book = book
+
+        if chapter == self._counter.chapter + 1:
+            self._counter.increase_chapter()
+        else:
+            if chapter != self._counter.chapter:
+                self._logger.error(
+                    Logger.file_format("Chapter is out of order ({}, {})".format(
+                        self._counter.chapter, chapter), self._filename, self._line_cnt))
+            if verse != self._counter.verse:
+                self._logger.error(Logger.file_format(
+                    "Verse is out of order ({}, {})".format(
+                        self._counter.verse, verse), self._filename, self._line_cnt))
+
+        self._entry = DataEntry(
+            index=self._total_cnt,
+            book=book,
+            chapter=chapter,
+            verse=verse,
+            text=line["text"],
+            translation=line["translation"]
+        )
+        self._counter.increase_verse()
+
+    def _line(self, line: dict):
+        if not line["line"]:
+            self._logger.error(Logger.file_format("Expected a line", self._filename, self._line_cnt))
+
+    def _word(self, line: dict):
+        if not line["index"]:
+            self._logger.error(Logger.file_format("Expected a greek word", self._filename, self._line_cnt))
+
+        index = int(line["index"])
+
+        if index != self._word_cnt:
+            self._logger.error(
+                Logger.file_format("Greek word not in order ({}, {})".format(
+                    self._word_cnt, index), self._filename, self._line_cnt))
+
+        self._entry.words.append(GreekWord(
+            word=line["word"],
+            lexeme=line["lexeme"],
+            grammar=line["grammar"],
+        ))
+        self._word_cnt += 1
+        self._total_cnt += 1
+
+    def _end(self):
+        self._data.append(self._entry)
+        self._entry = None
+
+    def __iter__(self):
+        self._iter = self._proc_iter()
+        self._machine = StateMachine()
+        self._skip = False
+        self._data = list()
+
+        self._counter = BibleReferenceCounter()
+        self._cur_book = None
+
+        self._line_cnt = 0
+        self._total_cnt = 0
+        self._word_cnt = 1
+
+        self._entry = None
+        return self
+
+    def __next__(self):
+        entry = next(self._iter)
+        if entry:
+            return entry
+        else:
+            raise StopIteration()
 
 
 class StateMachine:
@@ -74,36 +261,9 @@ class TextLoader(Processor):
 
     def __init__(self, logger: Logger, translation: str = None):
         self.logger = logger
-
-        self._processor = (
-            None,
-            self.process_start,
-            self.process_text,
-            self.process_line,
-            self.process_word,
-            self.process_end
-        )
-
         self._translation = translation
-
-        self._machine = StateMachine()
-        self._skip = False
-        self._regex = VERSE_REGEX
-
-        self._line_cnt = 0
-        self._cur_file = None
-        self._cur_book = None
-
-        self._total_cnt = 0
-        self._chapter_cnt = 1
-        self._verse_cnt = 1
-        self._word_cnt = 1
-
         self._data = list()
-        self._entry = None
         self._verify = ""
-
-        # All missing verses reported.
         self._missing = list()
 
     @property
@@ -130,141 +290,10 @@ class TextLoader(Processor):
         }
 
     def process(self, filename: Path):
-        self.logger.info("Load corpus: {}".format(filename.name))
+        for entry in LoaderIterator(filename, self._translation):
+            self._add_data(entry)
 
-        self._cur_file = str(filename)
-
-        try:
-            for line in self.iterate(filename):
-                if not line:
-                    continue
-
-                self.switch(line)
-                try:
-                    self._processor[self._machine.state](line)
-                except ProcessException as e:
-                    self.logger.error(Logger.file_format(e, self._cur_file, self._line_cnt))
-
-            self._machine.goto(StateMachine.END)
-            self._processor[self._machine.state]()
-        except StateError as e:
-            self.logger.error(Logger.file_format(
-                "{} The parser suffered from a state machine error, skipping".format(e),
-                self._cur_file, self._line_cnt
-            ))
-
-    def switch(self, line: dict):
-        self.logger.debug(list(filter(None, line.values())))
-
-        # In case a verse has been left out we reset the state machine and start over.
-        if line["translation"] and self._machine.state is StateMachine.LINE:
-            self._add_data()
-            self._entry = None
-            self._machine.reset()
-            self._machine.goto(StateMachine.TEXT)
-
-        elif line["translation"] and self._machine.state is not StateMachine.TEXT:
-            if self._machine.state == StateMachine.WORD:
-                self._add_data()
-                self._entry = None
-            self._machine.goto(StateMachine.TEXT)
-        elif line["line"] and self._machine.state is not StateMachine.LINE:
-            self._machine.goto(StateMachine.LINE)
-        elif line["index"] and self._machine.state is not StateMachine.WORD:
-            self._machine.goto(StateMachine.WORD)
-            self._word_cnt = 1
-
-    def process_start(self, line: dict):
-        pass
-
-    def process_word(self, line: dict):
-        if not line["index"]:
-            self.logger.error(Logger.file_format("Expected a greek word", self._cur_file, self._line_cnt))
-
-        index = int(line["index"])
-
-        if index != self._word_cnt:
-            self.logger.error(
-                Logger.file_format("Greek word not in order ({}, {})".format(
-                    self._word_cnt, index), self._cur_file, self._line_cnt))
-
-        self._entry.words.append(GreekWord(
-            word=line["word"],
-            lexeme=line["lexeme"],
-            grammar=line["grammar"],
-        ))
-        self._word_cnt += 1
-        self._total_cnt += 1
-
-    def process_line(self, line: dict):
-        if not line["line"]:
-            self.logger.error(Logger.file_format("Expected a line", self._cur_file, self._line_cnt))
-
-    def process_text(self, line: dict):
-        if not line["translation"]:
-            self.logger.error(Logger.file_format("Expected a translation", self._cur_file, self._line_cnt))
-        elif line["translation"] != self._translation:
-            return
-
-        book = line["book"]
-        chapter = int(line["chapter"])
-        verse = int(line["verse"])
-
-        if not line["text"]:
-            self._skip = True
-            self._missing.append({
-                "book": book,
-                "chapter": chapter,
-                "verse": verse,
-                "translation": line["translation"],
-                "line": self._line_cnt
-            })
-            self.logger.warning(
-                Logger.file_format("{book} {chapter}:{verse} ({translation}) is missing in".format(
-                    book=book, chapter=chapter, verse=verse, translation=line["translation"]),
-                    self._cur_file, self._line_cnt, "corpus"
-                )
-            )
-
-        if book:
-            self._cur_book = book
-
-        if chapter == self._chapter_cnt + 1:
-            self._chapter_cnt += 1
-            self._verse_cnt = 1
-        else:
-            if chapter != self._chapter_cnt:
-                self.logger.error(
-                    Logger.file_format("Chapter is out of order ({}, {})".format(
-                        self._chapter_cnt, chapter), self._cur_file, self._line_cnt))
-            if verse != self._verse_cnt:
-                self.logger.error(Logger.file_format(
-                    "Verse is out of order ({}, {})".format(
-                        self._verse_cnt, verse), self._cur_file, self._line_cnt))
-
-        self._entry = DataEntry(
-            index=self._total_cnt,
-            book=book,
-            chapter=chapter,
-            verse=verse,
-            text=line["text"],
-            translation=line["translation"]
-        )
-        self._verse_cnt += 1
-
-    def process_end(self):
-        self._add_data()
-        self._entry = None
-
-    def iterate(self, filename: Path):
-        with filename.open("r") as doc:
-            for line in doc:
-                self._line_cnt += 1
-                match = re.match(WHOLE_REGEX, line)
-                if match:
-                    yield match.groupdict()
-
-    def _add_data(self):
-        if self._entry.text:
-            self._verify += self._entry.text.strip() + "\n"
-        self._data.append(self._entry)
+    def _add_data(self, entry):
+        if entry.text:
+            self._verify += entry.text.strip() + "\n"
+        self._data.append(entry)
