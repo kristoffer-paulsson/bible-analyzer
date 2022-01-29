@@ -82,6 +82,7 @@ class FreshLoaderIterator(LoaderIterator):
         self._word_cnt = 1
 
         self._entry = None
+        self._counter = BibleReferenceCounter()
 
     def _file_iter(self):
         with self._filename.open("r") as doc:
@@ -319,7 +320,7 @@ class TextLoader(Processor):
         }
 
     def process(self, filename: Path):
-        for entry in LoaderIterator(filename, self._translation):
+        for entry in FreshLoaderIterator(filename, self._translation):
             self._add_data(entry)
 
     def _add_data(self, entry):

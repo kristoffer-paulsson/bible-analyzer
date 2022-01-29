@@ -25,7 +25,7 @@ import re
 
 from bibleanalyzer.data import BOOKS, OLD_TESTAMENT, NEW_TESTAMENT
 
-REFERENCE_REGEX = r"""^((?P<book>(?:[1-3]_)[\S ]+) (?:(?:(?P<chapter_lr1>\d+)\:(?P<verse_lr1>\d+)-(?P<chapter_lr2>\d+)\:(?P<verse_lr2>\d+))|(?:(?P<chapter_r1>\d+)\:(?P<verse_r1>\d+)-(?P<verse_r2>\d+))|(?P<chapter>\d+)\:(?P<verse>\d+)))$"""
+REFERENCE_REGEX = r"""^((?P<book>[\S]+) (?:(?:(?P<chapter_lr1>\d+)\:(?P<verse_lr1>\d+)-(?P<chapter_lr2>\d+)\:(?P<verse_lr2>\d+))|(?:(?P<chapter_r1>\d+)\:(?P<verse_r1>\d+)-(?P<verse_r2>\d+))|(?P<chapter>\d+)\:(?P<verse>\d+)))$"""
 
 
 class BibleReferenceError(RuntimeError):
@@ -60,6 +60,9 @@ class BibleReferenceCounter:
         self._chapter += 1
         self._verse = 1
 
+    def __str__(self):
+        return "{0}:{1}".format(self._chapter, self._verse)
+
 
 class BibleReference:
     """Representation of a bible reference with a range if necessary."""
@@ -67,12 +70,13 @@ class BibleReference:
     _DATA = json.loads(BOOKS)
     _BOOKS = _DATA[OLD_TESTAMENT] + _DATA[NEW_TESTAMENT]
 
-    def __init__(self, book: str, chapter: int = 1, verse: int = 1, to_chapter: int = None, to_verse: int = None):
+    def __init__(self, book: str, chapter: int, verse: int, to_chapter: int = None, to_verse: int = None):
         self._book = book
         self._from_chapter = chapter
         self._from_verse = verse
         self._to_chapter = to_chapter
         self._to_verse = to_verse
+        print(self._book, self._from_chapter, self._from_verse, self._to_chapter, self._to_verse)
 
     @property
     def book(self) -> str:
@@ -93,7 +97,15 @@ class BibleReference:
 
     def is_inside(self, counter: BibleReferenceCounter) -> bool:
         if self._to_chapter:
-            return self._from_chapter <= counter.chapter <= self._to_chapter and self._from_verse <= counter.verse <= self._to_verse
+            if self._from_chapter <= counter.chapter <= self._to_chapter:
+                if self._from_chapter == counter.chapter and self._from_verse > counter.verse:
+                    return False
+                elif self._to_chapter == counter.chapter and self._to_verse < counter.verse:
+                    return False
+                else:
+                    return True
+            else:
+                return False
         elif self._to_verse:
             return self._from_chapter == counter.chapter and self._from_verse <= counter.verse <= self._to_verse
         else:
@@ -104,8 +116,9 @@ class BibleReference:
         match = re.match(REFERENCE_REGEX, reference)
         if match:
             group = match.groupdict()
+            print(group["book"], cls._BOOKS)
             if group["book"] not in cls._BOOKS:
-                raise cls(*BibleReferenceError.UNKNOWN_BOOK)
+                raise BibleReferenceError(*BibleReferenceError.UNKNOWN_BOOK)
             if group["chapter_lr1"] is not None:
                 if int(group["chapter_lr1"]) < 1 or int(group["chapter_lr2"]) < 1:
                     raise BibleReferenceError(*BibleReferenceError.CHAPTER_VALUE)
@@ -120,9 +133,9 @@ class BibleReference:
                     int(group["chapter_lr2"]), int(group["verse_lr2"])
                 )
             elif group["chapter_r1"] is not None:
-                if int(group["chapter_l1"]) < 1:
+                if int(group["chapter_r1"]) < 1:
                     raise BibleReferenceError(*BibleReferenceError.CHAPTER_VALUE)
-                if int(group["verse_lr"]) < 1 or int(group["verse_r2"]) < 1:
+                if int(group["verse_r1"]) < 1 or int(group["verse_r2"]) < 1:
                     raise BibleReferenceError(*BibleReferenceError.VERSE_VALUE)
                 if int(group["verse_r1"]) >= int(group["verse_r2"]):
                     raise BibleReferenceError(*BibleReferenceError.VERSE_ORDER)
@@ -137,7 +150,6 @@ class BibleReference:
                     raise BibleReferenceError(*BibleReferenceError.CHAPTER_VALUE)
                 if int(group["verse"]) < 1:
                     raise BibleReferenceError(*BibleReferenceError.VERSE_VALUE)
-
                 return cls(group["book"], int(group["chapter"]), int(group["verse"]))
         else:
             raise BibleReferenceError(*BibleReferenceError.UNRECOGNIZABLE)

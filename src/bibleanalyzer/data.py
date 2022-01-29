@@ -107,6 +107,7 @@ BOOKS = """
 
 OLD_TESTAMENT = "ot"
 NEW_TESTAMENT = "nt"
+BOTH_TESTAMENTS = "all"
 
 CORPUS = {
     "ot": "LXT",
