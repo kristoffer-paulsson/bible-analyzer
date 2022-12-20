@@ -73,17 +73,17 @@ class InflexionBWG(Inflexion):
 class Speech(InflexionBWG):
     """Part of speech."""
 
-    NOUN = "n"
-    PRONOUN = "r"
-    DEFINITE_ARTICLE = "d"
-    VERB = "v"
-    ADJECTIVE = "a"
-    ADVERB = "b"
-    CONJUNCTION = "c"
-    PREPOSITION = "p"
-    PARTICLE = "x"
-    INDECLINABLE_NOUN = "t"
-    INTERJECTION = "i"
+    NOUN = "n"              # n
+    PRONOUN = "r"           # pro
+    DEFINITE_ARTICLE = "d"  # def.art
+    VERB = "v"              # v
+    ADJECTIVE = "a"         # adj
+    ADVERB = "b"            # adv
+    CONJUNCTION = "c"       # cnj
+    PREPOSITION = "p"       # prep
+    PARTICLE = "x"          # ptcl
+    INDECLINABLE_NOUN = "t" # ndec ?
+    INTERJECTION = "i"      # inj
     UNIDENTIFIED = "z"
     UNKNOWN = "-"
 
@@ -95,91 +95,93 @@ class Case(InflexionBWG):
 class CaseGeneric(Case):
     """Word case, generically."""
 
-    NOMINATIVE = "n"
-    GENITIVE = "g"
-    DATIVE = "d"
-    ACCUSATIVE = "a"
-    VOCATIVE = "v"
+    NOMINATIVE = "n"        # nom
+    GENITIVE = "g"          # gen
+    DATIVE = "d"            # dat
+    ACCUSATIVE = "a"        # acc
+    VOCATIVE = "v"          # voc
     UNKNOWN = "-"
+    # LOCATIVE = "l"        # loc
 
 
 class CasePreposition(Case):
     """Preposition case, specifically."""
 
-    GENITIVE = "g"
-    DATIVE = "d"
-    ACCUSATIVE = "a"
-    INDETERMINATE = "p"
+    GENITIVE = "g"          # gen
+    DATIVE = "d"            # dat
+    ACCUSATIVE = "a"        # acc
+    INDETERMINATE = "p"     # indet
     UNKNOWN = "-"
 
 
 class Gender(InflexionBWG):
     """Word gender."""
 
-    MASCULINE = "m"
-    FEMININE = "f"
-    NEUTER = "n"
+    MASCULINE = "m"         # m
+    FEMININE = "f"          # f
+    NEUTER = "n"            # n
     UNKNOWN = "-"
 
 
 class Number(InflexionBWG):
     """Word number."""
 
-    SINGULAR = "s"
-    PLURAL = "p"
+    SINGULAR = "s"          # sg
+    PLURAL = "p"            # pl
     UNKNOWN = "-"
+    # DUAL = "d"            # du
 
 
 class Mood(InflexionBWG):
     """Word mood."""
 
-    PARTICIPLE = "p"
-    INFINITIVE = "n"
-    INDICATIVE = "i"
-    IMPERATIVE = "d"
-    SUBJUNCTIVE = "s"
-    OPTATIVE = "o"
+    PARTICIPLE = "p"        # ptcp
+    INFINITIVE = "n"        # inf
+    INDICATIVE = "i"        # ind
+    IMPERATIVE = "d"        # imp
+    SUBJUNCTIVE = "s"       # sjv
+    OPTATIVE = "o"          # opt
     UNKNOWN = "-"
 
 
 class Tense(InflexionBWG):
     """Word tense."""
 
-    PRESENT = "p"
-    FUTURE = "f"
-    AORIST = "a"
-    IMPERFECT = "i"
-    PERFECT = "x"
-    PLUPERFECT = "y"
-    FUTURE_PERFECT = "z"
+    PRESENT = "p"           # prs
+    FUTURE = "f"            # fut
+    AORIST = "a"            # aor
+    IMPERFECT = "i"         # impf
+    PERFECT = "x"           # prf
+    PLUPERFECT = "y"        # plup
+    FUTURE_PERFECT = "z"    # fut.prf
     UNKNOWN = "-"
 
 
 class Voice(InflexionBWG):
     """Word voice."""
 
-    ACTIVE = "a"
-    MIDDLE = "m"
-    PASSIVE = "p"
-    MIDDLE_PASSIVE = "e"
+    ACTIVE = "a"            # act
+    MIDDLE = "m"            # mid
+    PASSIVE = "p"           # pass
+    MEDIOPASSIVE = "e"      # med
     UNKNOWN = "-"
 
 
-class Person(InflexionBWG):
+class Person(InflexionBWG):     # pers
     """Word person."""
 
-    FIRST = "1"
-    SECOND = "2"
-    THIRD = "3"
+    FIRST = "1"             # 1
+    SECOND = "2"            # 2
+    THIRD = "3"             # 3
     UNKNOWN = "-"
 
 
-class Degree(InflexionBWG):
+class Degree(InflexionBWG): # deg
     """Word degree."""
 
-    COMPARATIVE = "c"
-    SUPERLATIVE = "s"
-    NONE = "n"  # POSITIVE
+    COMPARATIVE = "c"       # cmpr
+    SUPERLATIVE = "s"       # sup
+    NONE = "n"              # pos
     UNKNOWN = "-"
 
 
@@ -190,22 +192,22 @@ class Type(InflexionBWG):
 class TypeNoun(Type):
     """Noun type."""
 
-    COMMON = "c"
-    PROPER = "p"
+    COMMON = "c"        # cn
+    PROPER = "p"        # pn
     UNKNOWN = "-"
 
 
 class TypePronoun(Type):
     """Pronoun type."""
 
-    PERSONAL = "p"
-    RELATIVE = "r"
-    DEMONSTRATIVE = "d"
-    INTERROGATIVE = "q"
-    INDEFINITE = "i"
-    INTENSIVE = "t"
-    REFLEXIVE = "x"
-    RECIPROCAL = "e"
+    PERSONAL = "p"      # pers
+    RELATIVE = "r"      # rel
+    DEMONSTRATIVE = "d" # dem
+    INTERROGATIVE = "q" # int
+    INDEFINITE = "i"    # ndef
+    INTENSIVE = "t"     # ints
+    REFLEXIVE = "x"     # refl
+    RECIPROCAL = "e"    # recp
     UNKNOWN = "-"
 
 
@@ -213,23 +215,23 @@ class TypeAdjective(Type):
     """Adjective type."""
 
     NORMAL = "n"
-    POSSESSIVE = "s"
-    DEMONSTRATIVE = "d"
-    INTERROGATIVE = "q"
-    INDEFINITE = "i"
-    INTENSIVE = "t"
-    CARDINAL = "c"  # Cardinal number
-    ORDINAL = "o"  # Ordinal number
-    NUMERAL = "n"
-    RELATIVE = "r"
+    POSSESSIVE = "s"    # poss
+    RELATIVE = "r"      # rel
+    DEMONSTRATIVE = "d" # dem
+    INTERROGATIVE = "q" # int
+    INDEFINITE = "i"    # ndef
+    INTENSIVE = "t"     # ints
+    CARDINAL = "c"      # card
+    ORDINAL = "o"       # ord
+    NUMERAL = "n"       # num
     UNKNOWN = "-"
 
 
-class TypeConjunction(Type):
+class TypeConjunction(Type):    # cnj
     """Conjunction type."""
 
-    SUBORDINATE = "s"
-    COORDINATE = "c"
+    SUBORDINATE = "s"   # subr
+    COORDINATE = "c"    # coord
     UNKNOWN = "-"
 
 
